@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sub2Rebate Admin - Withdrawal Audit</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#eceef0",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#f7f9fb",
+                    "on-primary": "#ffffff",
+                    "secondary": "#4648d4",
+                    "primary-fixed": "#dae2fd",
+                    "on-secondary-container": "#fffbff",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "tertiary-container": "#002113",
+                    "secondary-fixed": "#e1e0ff",
+                    "primary-fixed-dim": "#bec6e0",
+                    "outline-variant": "#c6c6cd",
+                    "rebate-success": "#10B981",
+                    "secondary-container": "#6063ee",
+                    "error": "#ba1a1a",
+                    "primary-container": "#131b2e",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#07006c",
+                    "tertiary-fixed": "#6ffbbe",
+                    "surface-dim": "#d8dadc",
+                    "on-error-container": "#93000a",
+                    "border-subtle": "#E2E8F0",
+                    "on-background": "#191c1e",
+                    "on-surface": "#191c1e",
+                    "surface-tint": "#565e74",
+                    "surface": "#f7f9fb",
+                    "surface-container-low": "#f2f4f6",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "error-destructive": "#EF4444",
+                    "on-tertiary-container": "#009668",
+                    "inverse-primary": "#bec6e0",
+                    "outline": "#76777d",
+                    "tertiary": "#000000",
+                    "on-primary-container": "#7c839b",
+                    "surface-variant": "#e0e3e5",
+                    "inverse-surface": "#2d3133",
+                    "surface-container-high": "#e6e8ea",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed-variant": "#2f2ebe",
+                    "on-primary-fixed": "#131b2e",
+                    "background": "#f7f9fb",
+                    "text-muted": "#64748B",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#45464d",
+                    "secondary-fixed-dim": "#c0c1ff",
+                    "surface-white": "#FFFFFF",
+                    "primary": "#000000",
+                    "on-tertiary-fixed": "#002113"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "base": "4px",
+                    "stack-md": "16px",
+                    "gutter-mobile": "16px",
+                    "container-padding": "24px",
+                    "stack-sm": "8px",
+                    "gutter-desktop": "24px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "metric-xl": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "metric-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Side Navigation Bar -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-white border-r border-border-subtle flex flex-col py-gutter-desktop px-4 shadow-sm z-50">
+<div class="flex items-center gap-3 mb-10 px-2">
+<div class="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-primary">Sub2Rebate</h1>
+<p class="text-label-sm text-text-muted">Fintech Dashboard</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-md font-label-md">Home</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary font-bold border-r-4 border-secondary bg-surface-container-low" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="text-label-md font-label-md">Withdraw</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="text-label-md font-label-md">Promotion</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-md font-label-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-border-subtle space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="text-label-md font-label-md">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-error hover:bg-error-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="text-label-md font-label-md">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full h-16 px-gutter-desktop sticky top-0 bg-surface-white/80 backdrop-blur-md border-b border-border-subtle z-40">
+<div class="flex items-center gap-6">
+<h2 class="text-headline-sm font-headline-sm text-primary">Withdrawal Audit</h2>
+<div class="hidden md:flex items-center gap-4">
+<a class="text-label-sm text-text-muted hover:text-primary transition-colors" href="#">Overview</a>
+<a class="text-label-sm text-primary font-bold border-b-2 border-primary py-5" href="#">Analytics</a>
+<a class="text-label-sm text-text-muted hover:text-primary transition-colors" href="#">Security</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-text-muted hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="h-8 w-[1px] bg-border-subtle"></div>
+<div class="flex items-center gap-2 px-2 py-1 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer">
+<img alt="Admin Profile" class="w-8 h-8 rounded-full border border-border-subtle object-cover" data-alt="A professional headshot of a financial administrator in a clean, modern corporate setting. The lighting is bright and even, highlighting a trustworthy and experienced expression. The background is a blurred office interior with soft blue and white tones that match a premium fintech application aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx2vLgoSyOC7cSCcR9scqG2q74XnkwFPT_ajihAy18-uy9kig0oExtioOGGAooi01O-Y4rGlL8_vuP1UTsMACzobysloMZTzKf1XQmsrwuRTmMKFzOCT3tTkIqBaQjnbjzbKKEa9Yikxaz80PttTBThiTxEdEYNwZqK8mV0GqmBSgpPlL5-7yVW42hbrKC131GgdZf2fWd6dYRu-iqcqFe56Y5V1XKnhsjQ2b7mY48E19Kb4WDHSpZgQhXbWzcovT-4fkRunkkbL4"/>
+<span class="text-label-md font-label-md text-primary">Admin_Chen</span>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-container-padding max-w-[1440px] mx-auto space-y-6">
+<!-- Quick Audit Action Bar & Stats -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+<div class="lg:col-span-3 bg-surface-white border border-border-subtle rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+<div class="space-y-1">
+<p class="text-label-sm text-text-muted uppercase tracking-wider">Quick Actions</p>
+<h3 class="text-headline-md font-headline-md">Audit Queue Manager</h3>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="px-4 py-2 bg-primary text-white rounded-lg text-label-md font-label-md hover:opacity-90 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="done_all">done_all</span>
+                            Approve All Low Risk
+                        </button>
+<button class="px-4 py-2 bg-surface-white border border-border-subtle text-primary rounded-lg text-label-md font-label-md hover:bg-surface-container-low transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="file_download">file_download</span>
+                            Export Report
+                        </button>
+</div>
+</div>
+<div class="bg-secondary text-white rounded-xl p-6 shadow-md flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined" data-icon="hourglass_empty">hourglass_empty</span>
+<span class="text-label-sm bg-white/20 px-2 py-0.5 rounded-full">Pending</span>
+</div>
+<div>
+<p class="text-label-sm opacity-80 mb-1">Total Pending</p>
+<div class="flex items-baseline gap-2">
+<h4 class="text-metric-xl font-metric-xl">¥248,500</h4>
+<span class="text-label-sm">34 requests</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Tab Filtering -->
+<div class="flex items-center justify-between border-b border-border-subtle">
+<div class="flex gap-8 overflow-x-auto custom-scrollbar">
+<button class="pb-4 border-b-2 border-secondary text-secondary font-bold text-label-md whitespace-nowrap">待审核 (12)</button>
+<button class="pb-4 border-b-2 border-transparent text-text-muted hover:text-primary transition-colors text-label-md whitespace-nowrap">已通过</button>
+<button class="pb-4 border-b-2 border-transparent text-text-muted hover:text-primary transition-colors text-label-md whitespace-nowrap">已打款</button>
+<button class="pb-4 border-b-2 border-transparent text-text-muted hover:text-primary transition-colors text-label-md whitespace-nowrap">已拒绝</button>
+</div>
+<div class="pb-4 flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[20px]" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-1.5 bg-surface-container-low border-transparent focus:ring-secondary focus:border-secondary rounded-lg text-label-md w-64 transition-all" placeholder="Search User ID or Account" type="text"/>
+</div>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-surface-white border border-border-subtle rounded-xl shadow-sm overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-border-subtle">
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase font-semibold">User Details</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase font-semibold text-right">Amount</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase font-semibold">Alipay Account</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase font-semibold">Applied At</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase font-semibold text-center">Risk Flag</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase font-semibold text-center">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold text-[12px]">ID</div>
+<div>
+<div class="text-label-md font-bold text-primary">#USR-88219</div>
+<div class="text-[12px] text-text-muted">High Volume Affiliate</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="text-label-md font-bold text-primary">¥12,400.00</div>
+<div class="text-[12px] text-rebate-success">Commission Rebate</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-label-md text-primary font-mono">138****9901</div>
+<div class="text-[12px] text-text-muted">Verified Name: *Jun</div>
+</td>
+<td class="px-6 py-4 text-label-sm text-text-muted">
+                                2023-10-24 14:22
+                            </td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rebate-success/10 text-rebate-success text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle">check_circle</span>
+                                    LOW
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center gap-2">
+<button class="p-2 hover:bg-surface-container-low rounded-lg transition-colors text-secondary" onclick="toggleModal('detailModal')" title="View Details">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 hover:bg-rebate-success/10 rounded-lg transition-colors text-rebate-success" title="Quick Approve">
+<span class="material-symbols-outlined" data-icon="check">check</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 (Risk Highlight) -->
+<tr class="bg-error-container/5 hover:bg-error-container/10 transition-colors">
+<td class="px-6 py-4 border-l-4 border-error">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-error-container text-on-error-container flex items-center justify-center font-bold text-[12px]">ID</div>
+<div>
+<div class="text-label-md font-bold text-primary">#USR-99320</div>
+<div class="text-[12px] text-text-muted">New Registered</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="text-label-md font-bold text-primary">¥45,000.00</div>
+<div class="text-[12px] text-error">High Amount</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-label-md text-primary font-mono">155****2231</div>
+<div class="text-[12px] text-text-muted">Unverified Account</div>
+</td>
+<td class="px-6 py-4 text-label-sm text-text-muted">
+                                2023-10-24 15:05
+                            </td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error/10 text-error text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]" data-icon="warning">warning</span>
+                                    HIGH
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center gap-2">
+<button class="p-2 hover:bg-surface-container-low rounded-lg transition-colors text-secondary" onclick="toggleModal('detailModal')">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 hover:bg-error/10 rounded-lg transition-colors text-error">
+<span class="material-symbols-outlined" data-icon="block">block</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- More rows... -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold text-[12px]">ID</div>
+<div>
+<div class="text-label-md font-bold text-primary">#USR-77211</div>
+<div class="text-[12px] text-text-muted">Loyal Partner</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="text-label-md font-bold text-primary">¥3,200.00</div>
+<div class="text-[12px] text-rebate-success">Commission Rebate</div>
+</td>
+<td class="px-6 py-4">
+<div class="text-label-md text-primary font-mono">177****3388</div>
+<div class="text-[12px] text-text-muted">Verified Name: *Li</div>
+</td>
+<td class="px-6 py-4 text-label-sm text-text-muted">
+                                2023-10-24 16:10
+                            </td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]" data-icon="info">info</span>
+                                    MEDIUM
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex justify-center gap-2">
+<button class="p-2 hover:bg-surface-container-low rounded-lg transition-colors text-secondary" onclick="toggleModal('detailModal')">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 hover:bg-rebate-success/10 rounded-lg transition-colors text-rebate-success">
+<span class="material-symbols-outlined" data-icon="check">check</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="p-4 bg-surface-container-low border-t border-border-subtle flex items-center justify-between">
+<span class="text-label-sm text-text-muted">Showing 1 to 10 of 12 requests</span>
+<div class="flex gap-2">
+<button class="px-3 py-1 border border-border-subtle bg-white rounded text-label-sm text-text-muted disabled:opacity-50">Previous</button>
+<button class="px-3 py-1 bg-primary text-white rounded text-label-sm">1</button>
+<button class="px-3 py-1 border border-border-subtle bg-white rounded text-label-sm">2</button>
+<button class="px-3 py-1 border border-border-subtle bg-white rounded text-label-sm">Next</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Withdrawal Details Modal -->
+<div class="fixed inset-0 z-[100] hidden" id="detailModal">
+<div class="absolute inset-0 bg-primary/40 backdrop-blur-sm" onclick="toggleModal('detailModal')"></div>
+<div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-surface-white shadow-2xl flex flex-col transform transition-transform duration-300 translate-x-full" id="modalContent">
+<!-- Modal Header -->
+<div class="px-gutter-desktop py-6 border-b border-border-subtle flex justify-between items-center">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors" onclick="toggleModal('detailModal')">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<div>
+<h3 class="text-headline-sm font-headline-sm text-primary">Audit Request #USR-99320</h3>
+<p class="text-label-sm text-text-muted">Review assets and risk control records</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-error text-white rounded-lg text-label-md font-bold">Reject</button>
+<button class="px-4 py-2 bg-rebate-success text-white rounded-lg text-label-md font-bold">Approve</button>
+</div>
+</div>
+<!-- Modal Body -->
+<div class="flex-1 overflow-y-auto p-gutter-desktop space-y-8 custom-scrollbar">
+<!-- Asset Overview -->
+<section>
+<h4 class="text-label-sm font-bold text-text-muted uppercase mb-4 tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="monitoring">monitoring</span>
+                        User Assets Overview
+                    </h4>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-surface-container-low rounded-xl border border-border-subtle">
+<p class="text-label-sm text-text-muted mb-1">Total Balance</p>
+<p class="text-headline-md font-bold text-primary">¥128,440.00</p>
+</div>
+<div class="p-4 bg-surface-container-low rounded-xl border border-border-subtle">
+<p class="text-label-sm text-text-muted mb-1">Withdrawal Freeze</p>
+<p class="text-headline-md font-bold text-error">¥45,000.00</p>
+</div>
+<div class="p-4 bg-surface-container-low rounded-xl border border-border-subtle">
+<p class="text-label-sm text-text-muted mb-1">Lifetime Earnings</p>
+<p class="text-headline-md font-bold text-rebate-success">¥520,301.00</p>
+</div>
+<div class="p-4 bg-surface-container-low rounded-xl border border-border-subtle">
+<p class="text-label-sm text-text-muted mb-1">Withdrawal Success Rate</p>
+<p class="text-headline-md font-bold text-primary">100%</p>
+</div>
+</div>
+</section>
+<!-- Risk Control Checklist -->
+<section>
+<h4 class="text-label-sm font-bold text-text-muted uppercase mb-4 tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="security">security</span>
+                        Risk Control Verification
+                    </h4>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-error-container/10 border border-error/20 rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error" data-icon="report">report</span>
+<div>
+<p class="text-label-md font-bold text-primary">IP Address Anomaly</p>
+<p class="text-[12px] text-text-muted">Applied from unknown region: Singapore (Proxy detected)</p>
+</div>
+</div>
+<span class="text-label-sm font-bold text-error">Flagged</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-rebate-success/5 border border-rebate-success/20 rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-rebate-success" data-icon="verified_user">verified_user</span>
+<div>
+<p class="text-label-md font-bold text-primary">KYC Certification</p>
+<p class="text-[12px] text-text-muted">Real-name verified via Alipay API on 2023-05-12</p>
+</div>
+</div>
+<span class="text-label-sm font-bold text-rebate-success">Verified</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-low border border-border-subtle rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-muted" data-icon="history">history</span>
+<div>
+<p class="text-label-md font-bold text-primary">Recent Transactions</p>
+<p class="text-[12px] text-text-muted">Frequent small-amount deposits in last 24h</p>
+</div>
+</div>
+<span class="text-label-sm font-bold text-secondary">Analyzing...</span>
+</div>
+</div>
+</section>
+<!-- Audit Log -->
+<section>
+<h4 class="text-label-sm font-bold text-text-muted uppercase mb-4 tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+                        Process Timeline
+                    </h4>
+<div class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[1px] before:bg-border-subtle">
+<div class="relative">
+<div class="absolute -left-[21px] top-1.5 w-[11px] h-[11px] rounded-full bg-rebate-success border-2 border-white shadow-sm"></div>
+<p class="text-label-sm font-bold text-primary">Withdrawal Requested</p>
+<p class="text-[12px] text-text-muted">User submitted Alipay withdrawal. IP: 104.28.192.1</p>
+<p class="text-[10px] text-text-muted mt-1">2023-10-24 15:05:22</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1.5 w-[11px] h-[11px] rounded-full bg-secondary border-2 border-white shadow-sm"></div>
+<p class="text-label-sm font-bold text-primary">System Audit Triggered</p>
+<p class="text-[12px] text-text-muted">Rule engine flagged high amount &amp; IP mismatch.</p>
+<p class="text-[10px] text-text-muted mt-1">2023-10-24 15:05:25</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1.5 w-[11px] h-[11px] rounded-full bg-outline border-2 border-white shadow-sm"></div>
+<p class="text-label-sm font-bold text-primary">Pending Admin Review</p>
+<p class="text-[12px] text-text-muted">Waiting for manual verification by Admin_Chen.</p>
+<p class="text-[10px] text-text-muted mt-1">Present</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Modal Footer -->
+<div class="p-gutter-desktop border-t border-border-subtle bg-surface-container-low">
+<label class="block text-label-sm font-bold text-text-muted mb-2">Internal Audit Note</label>
+<textarea class="w-full bg-white border-border-subtle focus:ring-secondary focus:border-secondary rounded-xl text-body-md p-3" placeholder="Enter reason for rejection or approval notes..." rows="3"></textarea>
+</div>
+</div>
+</div>
+<script>
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const content = document.getElementById('modalContent');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    content.classList.remove('translate-x-full');
+                }, 10);
+            } else {
+                content.classList.add('translate-x-full');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // Add some interaction for table rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return;
+                toggleModal('detailModal');
+            });
+        });
+    </script>
+</body></html>

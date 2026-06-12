@@ -1,0 +1,323 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-secondary-container": "#fffbff",
+                        "on-primary-container": "#7c839b",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#e1e0ff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-tint": "#565e74",
+                        "secondary-container": "#6063ee",
+                        "on-primary-fixed": "#131b2e",
+                        "primary-fixed": "#dae2fd",
+                        "on-secondary-fixed": "#07006c",
+                        "tertiary": "#000000",
+                        "secondary": "#4648d4",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "error-destructive": "#EF4444",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-white": "#FFFFFF",
+                        "surface": "#f7f9fb",
+                        "outline": "#76777d",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "on-surface": "#191c1e",
+                        "inverse-primary": "#bec6e0",
+                        "surface-bright": "#f7f9fb",
+                        "primary": "#000000",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-container": "#131b2e",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#009668",
+                        "rebate-success": "#10B981",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#002113",
+                        "background": "#f7f9fb",
+                        "primary-fixed-dim": "#bec6e0",
+                        "on-surface-variant": "#45464d",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-fixed-variant": "#2f2ebe",
+                        "surface-container": "#eceef0",
+                        "text-muted": "#64748B",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c6c6cd",
+                        "surface-variant": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "tertiary-fixed": "#6ffbbe",
+                        "border-subtle": "#E2E8F0",
+                        "secondary-fixed-dim": "#c0c1ff",
+                        "surface-container-high": "#e6e8ea"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "stack-md": "16px",
+                        "base": "4px",
+                        "gutter-mobile": "16px",
+                        "container-padding": "24px",
+                        "stack-sm": "8px",
+                        "gutter-desktop": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "metric-xl": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .sidebar-active { background-color: #f2f4f6; border-right: 4px solid #4648d4; font-weight: 700; color: #4648d4; }
+        .card-shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- Sidebar Navigation (Derived from JSON SideNavBar) -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-white border-r border-border-subtle flex flex-col py-6 px-4 z-50">
+<div class="mb-10 px-2">
+<h1 class="text-headline-md font-bold text-primary">Sub2Rebate</h1>
+<p class="text-label-sm text-text-muted">Fintech Dashboard</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">home</span> Home
+            </a>
+<a class="sidebar-active flex items-center gap-3 px-4 py-3 text-label-md rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">campaign</span> Promotion
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">payments</span> Withdraw
+            </a>
+</nav>
+<div class="mt-auto border-t border-border-subtle pt-6 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span> Support
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span> Sign Out
+            </a>
+</div>
+</aside>
+<!-- Main Content Shell -->
+<main class="ml-64 min-h-screen">
+<!-- Top App Bar (Derived from JSON TopAppBar) -->
+<header class="sticky top-0 z-40 w-full h-16 bg-surface-white/80 backdrop-blur-md border-b border-border-subtle px-gutter-desktop flex justify-between items-center">
+<div class="flex items-center gap-4">
+<nav class="flex text-label-sm text-text-muted">
+<span class="">用户管理</span>
+<span class="mx-2">/</span>
+<span class="">用户详情</span>
+<span class="mx-2">/</span>
+<span class="text-primary font-bold">余额调整</span>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4 items-center">
+<span class="material-symbols-outlined text-text-muted cursor-pointer hover:text-primary transition-colors">notifications</span>
+<div class="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a financial administrator with a clean-cut appearance. The background is a minimalist, softly blurred office environment with cool blue and white tones, matching a high-end fintech brand identity. The lighting is bright and even, conveying trust and transparency in a corporate setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc1AM8Y4SaHnYs0vDm6hsJrXG45eiHvdKTYJoHTmc5ZqPIkF7H2RW_2XwqR3iicXdWHwBgYStTmvUTXivMGMLZfvOXA-8B-g-_rKnYhRwB2UDlZnjpEhQDQH6l4prSt9oEfb3Bbb6PDgx5pWiAfrJXfV4HW83wqaIvJGGjUwMHKS3rzDfd_GdDAK17giNGeFpGVNl5aS-gpM7SjF8MduD9T5WIwh9-62e7Jee_s9TKt7z3E1s3ZlZK91_qXRyfeiByQfXH3rRW3Uo">
+</div>
+</div>
+</div>
+</header>
+<div class="p-gutter-desktop max-w-6xl mx-auto space-y-stack-lg">
+<!-- User Basic Info Card -->
+<section class="bg-surface-white border border-border-subtle rounded-xl p-6 card-shadow flex items-center justify-between">
+<div class="flex items-center gap-6">
+<div class="h-20 w-20 rounded-xl bg-surface-container-low overflow-hidden border border-outline-variant">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A close-up portrait of a male user for a financial platform profile. He wears a professional navy blazer over a crisp white shirt. The setting is a bright, modern architectural space with sharp lines and high-key lighting, emphasizing a clean and precise visual language consistent with institutional finance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCug4SIbPUXcnjMEFwdBuu-cbTsZx3uQvf_CknWsOg4oruoChQEegrDkfSeJ5iipEebq0t59s-0Bh6u-gVmWDS20n6JLt7hHYwVjcMXEz3HJNa2Qvp0oFngs06xofmbLeLiNGncO-nkM8UCSk4Ynl-XW7y6HJawFIvQwiHfW1anHZocPRSpv70Sust544tE93x5XHVmHdy8eDSYaBMPMWogex42XJirSCJq82yiYTFM8k2U_f8H7ab-U7vZd3QLnZm-vje4bJ-etVY">
+</div>
+<div>
+<h2 class="text-headline-md font-bold text-primary">Chen Wei (ID: 882091)</h2>
+<p class="text-label-md text-text-muted">注册日期: 2023年11月14日</p>
+</div>
+</div>
+<div class="flex gap-12">
+<div class="text-right">
+<p class="text-label-sm text-text-muted uppercase tracking-wider">当前可用余额</p>
+<p class="text-metric-xl font-bold text-secondary">¥ 12,450.00</p>
+</div>
+<div class="text-right">
+<p class="text-label-sm text-text-muted uppercase tracking-wider">累计返利</p>
+<p class="text-metric-xl font-bold text-rebate-success">¥ 84,200.50</p>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter-desktop">
+<!-- Adjustment Form -->
+<div class="lg:col-span-2 space-y-6">
+<div class="bg-surface-white border border-border-subtle rounded-xl p-8 card-shadow">
+<h3 class="text-headline-sm font-bold text-primary mb-6">余额手工调整</h3>
+<form class="space-y-6">
+<div class="grid grid-cols-2 gap-6">
+<!-- Type -->
+<div class="space-y-2">
+<label class="text-label-md font-bold text-on-surface">调整类型</label>
+<div class="flex gap-4">
+<label class="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-border-subtle rounded-lg cursor-pointer hover:border-secondary transition-all has-[:checked]:border-secondary has-[:checked]:bg-secondary/5">
+<input checked="" class="hidden" name="adj_type" type="radio" value="plus">
+<span class="material-symbols-outlined text-rebate-success">add_circle</span>
+<span class="text-label-md font-bold">增加余额 (+)</span>
+</label>
+<label class="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-border-subtle rounded-lg cursor-pointer hover:border-error-destructive transition-all has-[:checked]:border-error-destructive has-[:checked]:bg-error-destructive/5">
+<input class="hidden" name="adj_type" type="radio" value="minus">
+<span class="material-symbols-outlined text-error-destructive">remove_circle</span>
+<span class="text-label-md font-bold">减少余额 (-)</span>
+</label>
+</div>
+</div>
+<!-- Amount -->
+<div class="space-y-2">
+<label class="text-label-md font-bold text-on-surface">调整金额</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold">CNY</span>
+<input class="w-full pl-16 pr-4 py-3 border border-outline-variant rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition-all font-metric-xl text-headline-md" placeholder="0.00" type="number">
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-label-md font-bold text-on-surface">调整原因类型</label>
+<select class="w-full p-3 border border-outline-variant rounded-lg bg-surface-white focus:ring-2 focus:ring-secondary outline-none appearance-none">
+<option>请选择原因类型</option>
+<option>手动补偿 (System Compensation)</option>
+<option>违规扣除 (Compliance Deduction)</option>
+<option>测试返利 (Testing Rebate)</option>
+<option>活动奖励 (Promotion Bonus)</option>
+<option>其他 (Others)</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="text-label-md font-bold text-on-surface">详细备注</label>
+<textarea class="w-full p-4 border border-outline-variant rounded-lg focus:ring-2 focus:ring-secondary outline-none resize-none" placeholder="请详细描述调整原因，该内容将同步记录于系统审计日志..." rows="4"></textarea>
+</div>
+<!-- Security Warning -->
+<div class="bg-error-container/30 border border-error/20 rounded-lg p-4 flex gap-4">
+<span class="material-symbols-outlined text-error mt-0.5">warning</span>
+<div class="text-label-md text-on-error-container">
+<p class="font-bold">财务警告</p>
+<p class="mt-1">手动余额调整将直接影响平台财务对账逻辑。此操作将被永久记录在 <span class="font-bold underline cursor-pointer">审计日志 (Audit Log)</span> 中，并抄送至合规部邮箱。</p>
+</div>
+</div>
+<!-- Security Verification -->
+
+</form>
+</div>
+<!-- Footer Actions -->
+<div class="flex justify-end gap-4 pb-12">
+<button class="px-8 py-3 bg-surface-white border border-border-subtle rounded-lg text-label-md font-bold text-text-muted hover:bg-surface-container-low transition-all">
+                            取消返回
+                        </button>
+<button class="px-10 py-3 bg-secondary text-on-secondary rounded-lg text-label-md font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-secondary/20">
+                            确认执行调整
+                        </button>
+</div>
+</div>
+<!-- Right Side: Recent History -->
+<div class="lg:col-span-1">
+<div class="bg-surface-white border border-border-subtle rounded-xl p-6 card-shadow sticky top-24">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-label-md font-bold text-primary">最近手工调整记录</h3>
+<a class="text-label-sm text-secondary hover:underline" href="#">查看全部</a>
+</div>
+<div class="space-y-4">
+<!-- Entry 1 -->
+<div class="group p-4 bg-surface-container-low rounded-lg border border-transparent hover:border-border-subtle transition-all">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-rebate-success/10 text-rebate-success text-[10px] font-bold rounded uppercase">手动补偿</span>
+<span class="text-label-sm font-bold text-on-surface">+ ¥ 500.00</span>
+</div>
+<p class="text-label-sm text-on-surface-variant line-clamp-2 mb-2">由于系统返利延迟到账，经沟通后手动补发差额部分。</p>
+<div class="flex justify-between text-[11px] text-text-muted">
+<span class="">操作人: Admin_01</span>
+<span class="">2024.03.12 14:20</span>
+</div>
+</div>
+<!-- Entry 2 -->
+<div class="group p-4 bg-surface-container-low rounded-lg border border-transparent hover:border-border-subtle transition-all">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-error-destructive/10 text-error-destructive text-[10px] font-bold rounded uppercase">违规扣除</span>
+<span class="text-label-sm font-bold text-error-destructive">- ¥ 1,200.00</span>
+</div>
+<p class="text-label-sm text-on-surface-variant line-clamp-2 mb-2">账号存在异常刷单行为，根据服务条款扣除违规所得收益。</p>
+<div class="flex justify-between text-[11px] text-text-muted">
+<span class="">操作人: Security_Mgr</span>
+<span class="">2024.01.05 09:15</span>
+</div>
+</div>
+<!-- Entry 3 -->
+<div class="group p-4 bg-surface-container-low rounded-lg border border-transparent hover:border-border-subtle transition-all">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-secondary/10 text-secondary text-[10px] font-bold rounded uppercase">活动奖励</span>
+<span class="text-label-sm font-bold text-on-surface">+ ¥ 2,000.00</span>
+</div>
+<p class="text-label-sm text-on-surface-variant line-clamp-2 mb-2">完成双11年度活跃任务，一次性额外奖励发放。</p>
+<div class="flex justify-between text-[11px] text-text-muted">
+<span class="">操作人: System</span>
+<span class="">2023.11.11 00:01</span>
+</div>
+</div>
+</div>
+<!-- Empty State Alternative (Hidden) -->
+<div class="hidden flex flex-col items-center justify-center py-12 text-center">
+<span class="material-symbols-outlined text-outline-variant text-4xl mb-2">history</span>
+<p class="text-label-sm text-text-muted">该用户暂无手动调整记录</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Background Atmospheric Effect -->
+<div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+<div class="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-rebate-success/5 rounded-full blur-3xl"></div>
+</div>
+<script>
+        // Simple Interaction for Type selection
+        document.querySelectorAll('input[name="adj_type"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                // Visual feedback is handled by tailwind CSS peer/has logic
+            });
+        });
+
+        // Micro-interaction for buttons
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.style.transform = 'scale(0.96)');
+            btn.addEventListener('mouseup', () => btn.style.transform = 'scale(1)');
+            btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>User Management Details - Sub2Rebate</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#eceef0",
+                    "on-tertiary": "#ffffff",
+                    "surface-bright": "#f7f9fb",
+                    "on-primary": "#ffffff",
+                    "secondary": "#4648d4",
+                    "primary-fixed": "#dae2fd",
+                    "on-secondary-container": "#fffbff",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "tertiary-container": "#002113",
+                    "secondary-fixed": "#e1e0ff",
+                    "primary-fixed-dim": "#bec6e0",
+                    "outline-variant": "#c6c6cd",
+                    "rebate-success": "#10B981",
+                    "secondary-container": "#6063ee",
+                    "error": "#ba1a1a",
+                    "primary-container": "#131b2e",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#07006c",
+                    "tertiary-fixed": "#6ffbbe",
+                    "surface-dim": "#d8dadc",
+                    "on-error-container": "#93000a",
+                    "border-subtle": "#E2E8F0",
+                    "on-background": "#191c1e",
+                    "on-surface": "#191c1e",
+                    "surface-tint": "#565e74",
+                    "surface": "#f7f9fb",
+                    "surface-container-low": "#f2f4f6",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "error-destructive": "#EF4444",
+                    "on-tertiary-container": "#009668",
+                    "inverse-primary": "#bec6e0",
+                    "outline": "#76777d",
+                    "tertiary": "#000000",
+                    "on-primary-container": "#7c839b",
+                    "surface-variant": "#e0e3e5",
+                    "inverse-surface": "#2d3133",
+                    "surface-container-high": "#e6e8ea",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed-variant": "#2f2ebe",
+                    "on-primary-fixed": "#131b2e",
+                    "background": "#f7f9fb",
+                    "text-muted": "#64748B",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#45464d",
+                    "secondary-fixed-dim": "#c0c1ff",
+                    "surface-white": "#FFFFFF",
+                    "primary": "#000000",
+                    "on-tertiary-fixed": "#002113"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "base": "4px",
+                    "stack-md": "16px",
+                    "gutter-mobile": "16px",
+                    "container-padding": "24px",
+                    "stack-sm": "8px",
+                    "gutter-desktop": "24px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "metric-xl": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "metric-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-on-background">
+<!-- Side Navigation Bar -->
+<nav class="fixed left-0 top-0 h-full w-64 bg-surface-white border-r border-border-subtle flex flex-col py-6 px-4 z-50">
+<div class="mb-10 px-4">
+<h1 class="text-headline-md font-headline-md font-bold text-primary">Sub2Rebate</h1>
+<p class="text-label-sm text-text-muted mt-1">Fintech Dashboard</p>
+</div>
+<div class="space-y-2 flex-grow">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-label-md font-label-md">Home</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="text-label-md font-label-md">Promotion</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-label-md font-label-md">Withdraw</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary font-bold border-r-4 border-secondary bg-surface-container-low transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-md font-label-md">Settings</span>
+</a>
+</div>
+<div class="mt-auto pt-6 border-t border-border-subtle space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-label-md font-label-md">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-muted hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-label-md font-label-md">Sign Out</span>
+</a>
+</div>
+</nav>
+<!-- Top App Bar -->
+<header class="fixed top-0 left-64 right-0 h-16 bg-surface-white/80 backdrop-blur-md border-b border-border-subtle flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-6">
+<nav class="flex gap-4">
+<a class="text-label-sm font-label-sm text-text-muted hover:text-primary transition-colors" href="#">Overview</a>
+<a class="text-label-sm font-label-sm text-primary font-bold border-b-2 border-primary" href="#">Analytics</a>
+<a class="text-label-sm font-label-sm text-text-muted hover:text-primary transition-colors" href="#">Security</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-4 py-2 bg-primary text-on-primary rounded-lg text-label-sm font-label-sm hover:opacity-90 transition-opacity">Withdraw</button>
+<span class="material-symbols-outlined text-text-muted cursor-pointer hover:text-primary">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-border-subtle">
+<img alt="Admin Profile" data-alt="A professional headshot of a senior financial administrator in a clean-lit office environment. The lighting is soft and corporate, matching a high-trust fintech dashboard aesthetic. The image uses a palette of muted blues and grays to maintain visual cohesion with the professional minimalism of the UI design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLPVgDiAc5wi73jONrdK5w-PGlAw0in6-fJouVtSJ1L_Gv8bJWsGy4NBymvlp_KyA0XP02vuUwR9mJ21QEmQ0hk7_iA7NxTHdlzS6W1IP1w24FMMnmLDflBzQ0gBJUeiq4TCDGIlkNqp9L0BSP1S58-me6fCL-obWyKb9LxyppNyUI6ZxAJBqINf3poulB_T_sEENMoaWZq_324WWbM6_aP_EyFU7I0J6nsjb1NaBjLN8qQmwBzXzvX_i06k1ul55oRifyftzXT2o"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-64 mt-16 p-8 max-w-[1440px] mx-auto">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<nav class="flex items-center gap-2 text-label-sm text-text-muted mb-2">
+<span>Users</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary">User Details</span>
+</nav>
+<h2 class="text-headline-lg font-headline-lg text-primary">Alexander Thorne</h2>
+<p class="text-body-md text-text-muted">Account ID: #8842-XJ90 • Member since Oct 2023</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-border-subtle bg-white rounded-lg text-label-sm font-label-sm hover:bg-surface-container-low transition-colors">Export Report</button>
+<button class="px-4 py-2 bg-secondary text-on-primary rounded-lg text-label-sm font-label-sm flex items-center gap-2 hover:opacity-90">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+                    Verify Identity
+                </button>
+</div>
+</div>
+<!-- Top Bento Grid: Info, Chain, and Risk -->
+<div class="grid grid-cols-12 gap-6 mb-6">
+<!-- User Basic Info & Registration -->
+<div class="col-span-12 lg:col-span-4 bg-white rounded-xl border border-border-subtle p-6">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-label-md font-label-md text-text-muted">User Information</h3>
+<span class="px-2 py-1 bg-rebate-success/10 text-rebate-success text-label-sm rounded-full">Active</span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div>
+<p class="text-label-md font-bold">alexander.t@example.com</p>
+<p class="text-label-sm text-text-muted">+1 (555) 012-3456</p>
+</div>
+</div>
+<div class="pt-4 border-t border-border-subtle">
+<p class="text-label-sm text-text-muted mb-1">Registration Source</p>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">ads_click</span>
+<p class="text-body-md font-medium">Google Ads (Campaign: Q4_Scale)</p>
+</div>
+<p class="text-label-sm text-text-muted mt-2">IP Address: 192.168.1.45 (New York, US)</p>
+</div>
+</div>
+</div>
+<!-- Invitation Chain View -->
+<div class="col-span-12 lg:col-span-4 bg-white rounded-xl border border-border-subtle p-6 overflow-hidden relative">
+<h3 class="text-label-md font-label-md text-text-muted mb-6">Hierarchy Trace</h3>
+<div class="relative flex flex-col gap-6">
+<!-- Chain Line -->
+<div class="absolute left-[19px] top-4 bottom-4 w-[2px] bg-gradient-to-b from-secondary/40 via-secondary/20 to-transparent"></div>
+<!-- L2 Parent -->
+<div class="flex items-center gap-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center border-2 border-white shadow-sm">
+<span class="material-symbols-outlined text-secondary text-[20px]">account_tree</span>
+</div>
+<div>
+<p class="text-label-sm text-text-muted">Master Agent (L2)</p>
+<p class="text-label-md font-bold">Summit Global Group</p>
+</div>
+</div>
+<!-- L1 Parent -->
+<div class="flex items-center gap-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center border-2 border-white shadow-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">person_apron</span>
+</div>
+<div>
+<p class="text-label-sm text-text-muted">Direct Referral (L1)</p>
+<p class="text-label-md font-bold">Sarah Jenkins</p>
+</div>
+</div>
+<!-- Current User -->
+<div class="flex items-center gap-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center border-2 border-white shadow-md">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">person</span>
+</div>
+<div>
+<p class="text-label-sm text-secondary font-bold">Current User</p>
+<p class="text-label-md font-bold">Alexander Thorne</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Risk Control Console -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-low rounded-xl border border-border-subtle p-6">
+<h3 class="text-label-md font-label-md text-text-muted mb-4">Risk Management</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 bg-white rounded-lg border border-border-subtle">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error">block</span>
+<span class="text-label-md font-medium">Account Blacklist</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-error-destructive"></div>
+</label>
+</div>
+<button class="w-full py-2 border border-error-destructive text-error-destructive rounded-lg text-label-sm font-label-sm hover:bg-error-container transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">lock_reset</span>
+                        Freeze Assets &amp; Withdrawals
+                    </button>
+<div class="pt-2">
+<p class="text-label-sm text-text-muted mb-2">Risk Officer Notes</p>
+<textarea class="w-full p-3 rounded-lg border border-border-subtle bg-white text-body-md focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none h-20 resize-none" placeholder="Enter security observations..."></textarea>
+</div>
+</div>
+</div>
+</div>
+<!-- Financial Stats & Milestones -->
+<div class="grid grid-cols-12 gap-6 mb-6">
+<div class="col-span-12 lg:col-span-8 bg-white rounded-xl border border-border-subtle p-6">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-label-md font-label-md text-text-muted">Financial Performance</h3>
+<div class="flex gap-4">
+<div class="text-right">
+<p class="text-label-sm text-text-muted">Current Balance</p>
+<p class="text-headline-md font-bold text-secondary">$12,450.00</p>
+</div>
+<div class="text-right">
+<p class="text-label-sm text-text-muted">Total Recharged</p>
+<p class="text-headline-md font-bold text-primary">$84,200.00</p>
+</div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-2">
+<span class="text-label-sm font-bold text-primary">Q4 Milestone Progress</span>
+<span class="text-label-sm text-text-muted">75% to Platinum Reward</span>
+</div>
+<div class="w-full bg-surface-container h-3 rounded-full overflow-hidden mb-6">
+<div class="h-full bg-gradient-to-r from-secondary to-tertiary-fixed-dim" style="width: 75%"></div>
+</div>
+<div class="grid grid-cols-3 gap-4">
+<div class="p-4 bg-surface-bright rounded-lg border border-border-subtle">
+<p class="text-label-sm text-text-muted">Next Payout</p>
+<p class="text-body-lg font-bold">Nov 15, 2023</p>
+</div>
+<div class="p-4 bg-surface-bright rounded-lg border border-border-subtle">
+<p class="text-label-sm text-text-muted">Pending Audits</p>
+<p class="text-body-lg font-bold">3 Transaction(s)</p>
+</div>
+<div class="p-4 bg-surface-bright rounded-lg border border-border-subtle">
+<p class="text-label-sm text-text-muted">Lifetime Rebates</p>
+<p class="text-body-lg font-bold text-rebate-success">+$4,122.50</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Mini Graph / Visualization Space -->
+<div class="col-span-12 lg:col-span-4 bg-primary-container text-white rounded-xl overflow-hidden relative p-6">
+
+<div class="relative z-10 flex flex-col h-full">
+<h3 class="text-label-md font-label-md text-on-primary-container">Activity Density</h3>
+<div class="mt-auto">
+<p class="text-display-lg font-display-lg leading-tight">High</p>
+<p class="text-body-md text-on-primary-container mb-4">98th Percentile in volume this month.</p>
+<button class="w-full py-2 bg-white text-primary rounded-lg text-label-sm font-bold">Upgrade Account Class</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Detailed Rebate Flow Table -->
+<div class="bg-white rounded-xl border border-border-subtle overflow-hidden">
+<div class="p-6 border-b border-border-subtle flex justify-between items-center">
+<h3 class="text-headline-md font-headline-md text-primary">Rebate Transaction History</h3>
+<div class="flex gap-2">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[20px]">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-bright border border-border-subtle rounded-lg text-label-sm focus:ring-2 focus:ring-secondary/20 outline-none" placeholder="Filter by ID or Source..." type="text"/>
+</div>
+<button class="p-2 border border-border-subtle rounded-lg hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto no-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-bright">
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold">Transaction ID</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold">Source Type</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold">Date &amp; Time</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold">Volume</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold text-right">Rebate Amount</th>
+<th class="px-6 py-4 text-label-sm text-text-muted uppercase tracking-wider font-semibold">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 text-body-md font-medium">#TX-9920110</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-body-md">Forex Trade</span>
+</div>
+</td>
+<td class="px-6 py-4 text-label-md text-text-muted">Oct 28, 2023 14:22</td>
+<td class="px-6 py-4 text-body-md">$12,400.00</td>
+<td class="px-6 py-4 text-body-md font-bold text-rebate-success text-right">+$124.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-rebate-success/10 text-rebate-success text-label-sm rounded-md">Settled</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 text-body-md font-medium">#TX-9920085</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+<span class="text-body-md">Crypto Stake</span>
+</div>
+</td>
+<td class="px-6 py-4 text-label-md text-text-muted">Oct 27, 2023 09:15</td>
+<td class="px-6 py-4 text-body-md">$5,000.00</td>
+<td class="px-6 py-4 text-body-md font-bold text-rebate-success text-right">+$75.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-rebate-success/10 text-rebate-success text-label-sm rounded-md">Settled</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 text-body-md font-medium">#TX-9919842</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-body-md">Forex Trade</span>
+</div>
+</td>
+<td class="px-6 py-4 text-label-md text-text-muted">Oct 26, 2023 23:45</td>
+<td class="px-6 py-4 text-body-md">$2,100.00</td>
+<td class="px-6 py-4 text-body-md font-bold text-text-muted text-right">+$21.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-surface-container text-text-muted text-label-sm rounded-md">Auditing</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 text-body-md font-medium">#TX-9919760</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-body-md">Referral Bonus</span>
+</div>
+</td>
+<td class="px-6 py-4 text-label-md text-text-muted">Oct 25, 2023 11:02</td>
+<td class="px-6 py-4 text-body-md">-</td>
+<td class="px-6 py-4 text-body-md font-bold text-rebate-success text-right">+$50.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-rebate-success/10 text-rebate-success text-label-sm rounded-md">Settled</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 border-t border-border-subtle flex justify-between items-center bg-surface-bright">
+<span class="text-label-sm text-text-muted">Showing 4 of 128 transactions</span>
+<div class="flex gap-2">
+<button class="px-4 py-1.5 border border-border-subtle bg-white rounded-lg text-label-sm font-medium hover:bg-surface-container-low transition-colors">Previous</button>
+<button class="px-4 py-1.5 border border-border-subtle bg-white rounded-lg text-label-sm font-medium hover:bg-surface-container-low transition-colors">Next</button>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simple micro-interaction for freezing asset confirmation
+        document.querySelector('button.text-error-destructive').addEventListener('click', function() {
+            if (confirm('Are you sure you want to freeze assets for Alexander Thorne? This action will block all withdrawals immediately.')) {
+                this.classList.replace('text-error-destructive', 'bg-error-destructive');
+                this.classList.add('text-white');
+                this.innerHTML = '<span class="material-symbols-outlined text-[18px]">lock</span> Assets Frozen';
+            }
+        });
+    </script>
+</body></html>

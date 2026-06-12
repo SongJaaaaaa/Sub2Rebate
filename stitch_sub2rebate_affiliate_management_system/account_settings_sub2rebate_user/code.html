@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Account Settings | Sub2Rebate</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#6ffbbe",
+                        "primary": "#000000",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-variant": "#e0e3e5",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "error-destructive": "#EF4444",
+                        "on-secondary": "#ffffff",
+                        "rebate-success": "#10B981",
+                        "secondary-fixed-dim": "#c0c1ff",
+                        "inverse-on-surface": "#eff1f3",
+                        "border-subtle": "#E2E8F0",
+                        "surface-tint": "#565e74",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#131b2e",
+                        "text-muted": "#64748B",
+                        "on-surface": "#191c1e",
+                        "on-secondary-container": "#fffbff",
+                        "on-surface-variant": "#45464d",
+                        "inverse-surface": "#2d3133",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed": "#dae2fd",
+                        "on-background": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "secondary": "#4648d4",
+                        "on-primary-container": "#7c839b",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "surface": "#f7f9fb",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#002113",
+                        "outline-variant": "#c6c6cd",
+                        "on-primary-fixed": "#131b2e",
+                        "surface-container": "#eceef0",
+                        "surface-white": "#FFFFFF",
+                        "outline": "#76777d",
+                        "on-secondary-fixed-variant": "#2f2ebe",
+                        "surface-container-high": "#e6e8ea",
+                        "background": "#f7f9fb",
+                        "surface-bright": "#f7f9fb",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-secondary-fixed": "#07006c",
+                        "tertiary": "#000000",
+                        "primary-fixed-dim": "#bec6e0",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#bec6e0",
+                        "secondary-container": "#6063ee",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#009668",
+                        "secondary-fixed": "#e1e0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "stack-sm": "8px",
+                        "base": "4px",
+                        "stack-md": "16px",
+                        "gutter-mobile": "16px",
+                        "container-padding": "24px",
+                        "gutter-desktop": "24px"
+                    },
+                    "fontFamily": {
+                        "metric-xl": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "metric-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .custom-toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .custom-toggle input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #E2E8F0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #4648d4; }
+        input:checked + .slider:before { transform: translateX(20px); }
+    </style>
+</head>
+<body class="text-on-background">
+<!-- Desktop Side Navigation -->
+<aside class="h-full w-64 fixed left-0 top-0 hidden md:block bg-surface-white border-r border-border-subtle flex flex-col py-6 z-50">
+<div class="px-6 mb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Sub2Rebate</h1>
+<p class="text-text-muted text-label-sm uppercase tracking-widest mt-1">Affiliate Portal</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-3 text-text-muted hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center px-6 py-3 text-text-muted hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">campaign</span>
+<span class="font-body-md text-body-md">Promotion</span>
+</a>
+<a class="flex items-center px-6 py-3 text-text-muted hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">payments</span>
+<span class="font-body-md text-body-md">Withdrawals</span>
+</a>
+<a class="flex items-center px-6 py-3 text-secondary font-bold border-r-4 border-secondary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</nav>
+<div class="px-6 pt-6 mt-auto">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-md hover:opacity-90 transition-all">
+                Withdraw Funds
+            </button>
+</div>
+</aside>
+<!-- Mobile Top Header -->
+<header class="fixed top-0 left-0 w-full bg-surface-white border-b border-border-subtle h-16 flex items-center justify-between px-6 z-40 md:hidden">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Sub2Rebate</h1>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-text-muted">notifications</span>
+<span class="material-symbols-outlined text-text-muted">account_circle</span>
+</div>
+</header>
+<!-- Desktop Top Bar -->
+<header class="hidden md:flex justify-between items-center h-16 px-6 fixed top-0 right-0 z-40 bg-surface-white border-b border-border-subtle ml-64 w-[calc(100%-16rem)]">
+<div class="flex items-center bg-surface-container-low px-3 py-2 rounded-lg w-96">
+<span class="material-symbols-outlined text-text-muted mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-md w-full" placeholder="Search settings..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<p class="text-label-sm text-text-muted uppercase">Balance</p>
+<p class="font-bold text-primary">$12,450.00</p>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-muted cursor-pointer hover:text-secondary transition-colors">notifications</span>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-border-subtle bg-surface-container">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A high-quality professional portrait of a modern tech executive with a friendly expression. The lighting is soft and cinematic, highlighting the clean and minimalist office environment in the background. The overall aesthetic is professional, sharp, and high-trust, utilizing a soft-focus depth of field to keep the focus on the subject." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3NfLyX_9CHj7xKw52GiYc5QeLPoMW9cUPeaiF_O72Bdq4ky4VBPXDM4IQrcEuajBu926CIRspg41pIgRf8GMXwRZVPg4Y9fa6jlygi6HTmm_RLBTfRHwIocKix_83mINB1KCxP8gOnx-vu0ExR5-VYUrNtyEU8rQu8QmjxjBPko3SRch3z3TD3x8OkPKrg0ImD-vMzr-OPh6BHb3I-Twas3U3FrtvJ-R8GMSzP5BKpogeufF_4ilzFiabJYPVKXuOFnkpvVKnsRQ"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-20 md:pt-24 pb-20 md:ml-64 min-h-screen">
+<div class="max-w-6xl mx-auto px-6">
+<!-- Page Header -->
+<div class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-primary">Account Settings</h2>
+<p class="text-text-muted font-body-md mt-2">Manage your professional profile and account security protocols.</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Profile Customization (Column 1-7) -->
+<section class="lg:col-span-7 space-y-6">
+<div class="bg-surface-white border border-border-subtle rounded-xl p-6 shadow-sm">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-secondary">person</span>
+<h3 class="font-headline-md text-headline-md text-primary">Profile Customization</h3>
+</div>
+<div class="flex flex-col md:flex-row gap-8 items-start mb-8">
+<div class="relative group">
+<div class="w-24 h-24 rounded-2xl overflow-hidden bg-surface-container">
+<img alt="Avatar large" class="w-full h-full object-cover" data-alt="A close-up shot of a modern, stylish avatar in a circular frame. The subject is a clean-shaven professional with a welcoming smile. The background is a solid, neutral gray to emphasize clarity and minimalism, fitting for a premium fintech application. The lighting is bright and even, conveying transparency and trust." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5AVnKMz0cJrnDSQVEQsE-v6eC05eiLqitHYrS559dztPaDifgUy8UaVulLu9bbwENiu90LyRMguc8Y7dhO1qXjEo65MIUviSp_CUfHaKte78cktyfakzX2yLlG8IfqIM4YRoViLtV-gr75_NFWTyzpO1xnaTZk3LQlIAdn2h5LX80dxQ0J1MBmilHkOS21RPq6oJeVU8sCfzu8bUEPq_qzZyZ3D7tYYgdfprFsy4VTIBp6dtHmciLZLvS_VkmN7hpTERfBi5IoGs"/>
+</div>
+<button class="absolute -bottom-2 -right-2 bg-secondary text-on-secondary p-2 rounded-lg shadow-lg hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+<div class="space-y-1">
+<label class="font-label-sm text-text-muted">Display Name</label>
+<input class="w-full rounded-lg border-border-subtle focus:ring-secondary focus:border-secondary font-body-md" type="text" value="Alexander Mitchell"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-sm text-text-muted">Timezone</label>
+<select class="w-full rounded-lg border-border-subtle focus:ring-secondary focus:border-secondary font-body-md">
+<option>UTC -5 (EST)</option>
+<option>UTC +0 (GMT)</option>
+<option>UTC +8 (SGT)</option>
+</select>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="space-y-1">
+<label class="font-label-sm text-text-muted">Email Address</label>
+<div class="relative">
+<input class="w-full rounded-lg border-border-subtle focus:ring-secondary focus:border-secondary font-body-md pr-24" type="email" value="alexander.m@sub2rebate.com"/>
+<span class="absolute right-3 top-2 px-2 py-0.5 bg-rebate-success/10 text-rebate-success font-label-sm rounded-full">Verified</span>
+</div>
+</div>
+<div class="space-y-1">
+<label class="font-label-sm text-text-muted">Phone Number</label>
+<div class="relative">
+<input class="w-full rounded-lg border-border-subtle focus:ring-secondary focus:border-secondary font-body-md pr-32" type="tel" value="+1 (555) 012-3456"/>
+<button class="absolute right-3 top-2 text-secondary font-label-sm hover:underline">Verify Now</button>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-border-subtle flex justify-end gap-3">
+<button class="px-6 py-2 border border-border-subtle rounded-lg font-label-md text-text-muted hover:bg-surface-container-low transition-colors">Cancel</button>
+<button class="px-6 py-2 bg-primary text-on-primary rounded-lg font-label-md hover:opacity-90 transition-all">Save Changes</button>
+</div>
+</div>
+<!-- API Management -->
+<div class="bg-surface-white border border-border-subtle rounded-xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">terminal</span>
+<h3 class="font-headline-md text-headline-md text-primary">API Key Management</h3>
+</div>
+<button class="text-secondary font-label-md flex items-center hover:bg-secondary/5 px-3 py-1 rounded-lg">
+<span class="material-symbols-outlined text-sm mr-1">add</span>
+                                Create New Key
+                            </button>
+</div>
+<p class="text-text-muted font-body-md mb-4">Use these keys to integrate Sub2Rebate reporting into your custom tools.</p>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg border border-border-subtle">
+<div>
+<p class="font-label-md text-primary">Production_Main_Key</p>
+<p class="text-label-sm text-text-muted font-mono">sk_live_••••••••••••••••</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 text-text-muted hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">content_copy</span></button>
+<button class="p-2 text-text-muted hover:text-error-destructive transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Account Security (Column 8-12) -->
+<section class="lg:col-span-5 space-y-6">
+<div class="bg-primary text-on-primary rounded-xl p-6 shadow-lg relative overflow-hidden">
+<!-- Subtle Pattern Decoration -->
+<div class="absolute top-0 right-0 w-32 h-32 opacity-10 pointer-events-none">
+<svg class="w-full h-full text-white fill-current" viewbox="0 0 100 100">
+<path d="M0,0 L100,0 L100,100 Z"></path>
+</svg>
+</div>
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-tertiary-fixed">shield</span>
+<h3 class="font-headline-md text-headline-md">Security Status: Strong</h3>
+</div>
+<div class="space-y-4 relative z-10">
+<p class="font-body-md text-on-primary-container">Your account is currently protected by hardware-level encryption and biometric-ready 2FA protocols.</p>
+<div class="h-2 w-full bg-primary-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-fixed w-[85%]"></div>
+</div>
+<p class="text-label-sm opacity-80">Last security audit: 2 days ago</p>
+</div>
+</div>
+<div class="bg-surface-white border border-border-subtle rounded-xl p-6 shadow-sm">
+<h3 class="font-label-md text-primary mb-6 uppercase tracking-wider">Account Security</h3>
+<!-- 2FA Toggle -->
+<div class="flex items-center justify-between mb-8 pb-6 border-b border-border-subtle">
+<div>
+<p class="font-label-md text-primary">Two-Factor Authentication</p>
+<p class="text-label-sm text-text-muted">Secure your login with an extra layer.</p>
+</div>
+<label class="custom-toggle">
+<input checked="" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+<!-- Password Management -->
+<div class="space-y-4">
+<p class="font-label-md text-primary">Password Management</p>
+<div class="space-y-3">
+<div class="space-y-1">
+<label class="font-label-sm text-text-muted">Current Password</label>
+<input class="w-full rounded-lg border-border-subtle focus:ring-secondary focus:border-secondary font-body-md" placeholder="••••••••••••" type="password"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-sm text-text-muted">New Password</label>
+<input class="w-full rounded-lg border-border-subtle focus:ring-secondary focus:border-secondary font-body-md" type="password"/>
+</div>
+<div class="pt-2">
+<button class="w-full py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg font-label-md hover:bg-secondary/15 transition-all">
+                                        Update Password
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Session Activity -->
+<div class="bg-surface-white border border-border-subtle rounded-xl p-6 shadow-sm">
+<h3 class="font-label-md text-primary mb-4">Active Sessions</h3>
+<div class="space-y-4">
+<div class="flex items-start gap-3">
+<div class="p-2 bg-surface-container rounded-lg">
+<span class="material-symbols-outlined text-text-muted">desktop_windows</span>
+</div>
+<div class="flex-1">
+<p class="font-label-md text-primary">MacOS • Chrome</p>
+<p class="text-label-sm text-text-muted">New York, USA • Active now</p>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<div class="p-2 bg-surface-container rounded-lg">
+<span class="material-symbols-outlined text-text-muted">smartphone</span>
+</div>
+<div class="flex-1">
+<p class="font-label-md text-primary">iPhone 15 Pro • Safari</p>
+<p class="text-label-sm text-text-muted">New York, USA • 1 hour ago</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 text-error-destructive font-label-md hover:underline">Log out of all other sessions</button>
+</div>
+</section>
+</div>
+<!-- Advanced Data Export Card -->
+<div class="mt-8 mb-12 bg-surface-container-low border border-border-subtle rounded-xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Data & Privacy</h3>
+<p class="text-text-muted font-body-md">Export your complete transaction history and rebate analytics for financial auditing.</p>
+</div>
+<div class="flex gap-4 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-6 py-3 border border-border-subtle bg-surface-white rounded-lg font-label-md text-primary hover:bg-surface-container transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">download</span>
+                        Export PDF
+                    </button>
+<button class="flex-1 md:flex-none px-6 py-3 bg-secondary text-on-secondary rounded-lg font-label-md hover:opacity-90 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">database</span>
+                        Request CSV
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-2 bg-surface-white border-t border-border-subtle md:hidden z-50">
+<a class="flex flex-col items-center justify-center text-text-muted" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-label-sm font-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-muted" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="text-label-sm font-label-sm">Promos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-muted" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-label-sm font-label-sm">Payouts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary font-bold" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-sm font-label-sm">Settings</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions and hover effects
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mousedown', () => {
+                button.classList.add('scale-95');
+            });
+            button.addEventListener('mouseup', () => {
+                button.classList.remove('scale-95');
+            });
+            button.addEventListener('mouseleave', () => {
+                button.classList.remove('scale-95');
+            });
+        });
+
+        // Simple API Key Copy Interaction
+        document.querySelectorAll('.material-symbols-outlined').forEach(icon => {
+            if (icon.innerText === 'content_copy') {
+                icon.parentElement.addEventListener('click', () => {
+                    const original = icon.innerText;
+                    icon.innerText = 'check';
+                    icon.classList.add('text-rebate-success');
+                    setTimeout(() => {
+                        icon.innerText = original;
+                        icon.classList.remove('text-rebate-success');
+                    }, 2000);
+                });
+            }
+        });
+    </script>
+</body></html>
