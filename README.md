@@ -6,7 +6,7 @@ Sub2Rebate 是 Sub2API 的独立分销返利系统，采用无限级金字塔 + 
 
 ## 技术栈
 
-- **后端**: Laravel 13 + Filament 5
+- **后端**: Laravel 12 + Filament 3
 - **前端**: Vue 3 + Vite + Element Plus + Pinia
 - **数据库**: PostgreSQL
 - **缓存/队列**: Redis

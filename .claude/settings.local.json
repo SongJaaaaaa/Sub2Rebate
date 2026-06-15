@@ -4,7 +4,18 @@
       "Bash(git init *)",
       "Bash(git remote *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(gh auth *)",
+      "Bash(grep -E \"\\(Service|Controller\\)\\\\.php$\")",
+      "Bash(PATH=.tools/conda/php/bin:__TRACKED_VAR__ php artisan test)",
+      "Bash(/Users/macbook/Desktop/分销/.tools/conda/php/bin/php artisan *)",
+      "Bash(/Users/macbook/Desktop/分销/.tools/conda/php/bin/php *)",
+      "Bash(php artisan *)",
+      "Bash(npm run *)",
+      "Bash(PATH=/Users/macbook/Desktop/分销/backend/.tools/conda/php/bin:__TRACKED_VAR__ php artisan test)",
+      "Bash(npx vue-tsc *)"
     ]
   }
 }

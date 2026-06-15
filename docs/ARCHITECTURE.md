@@ -114,7 +114,7 @@ Milestone 判断是否处于里程碑阶段
 ### 5.2 返利发放
 
 ```text
-充值成功或额度增加
+明确充值事件
 -> 创建 rebate_events
 -> 判断是否已处理
 -> 读取邀请链路
@@ -124,6 +124,8 @@ Milestone 判断是否处于里程碑阶段
 -> 更新 rebate_balances
 -> 标记事件已处理
 ```
+
+说明：明确充值事件包括 Sub2API `redeem_codes`、`payment_orders`、`payment_audit_logs` 或 Sub2Rebate 后台补录事件。`users.balance` / `users.total_recharged` 快照只做对账和人工确认，不能直接自动触发返利。
 
 ### 5.3 提现
 
@@ -164,4 +166,3 @@ Milestone 判断是否处于里程碑阶段
 - 推广员等级。
 - 数据看板。
 - 风控模型。
-

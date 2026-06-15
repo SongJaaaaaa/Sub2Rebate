@@ -17,8 +17,8 @@
 当前已确定的项目技术栈：
 
 ```text
-后端：Laravel 13
-管理后台：Filament 5
+后端：Laravel 12
+管理后台：Filament 3
 用户前端：Vue 3 + Vite
 UI 框架：Element Plus
 状态管理：Pinia
@@ -37,6 +37,10 @@ docs/
 ├── PROJECT_GUIDELINES.md      项目规范
 ├── ARCHITECTURE.md            总体架构
 ├── ROADMAP.md                 版本路线图
+├── IMPLEMENTATION_PLAN.md     完整实施开发计划
+├── API_CONTRACT.md            API 契约
+├── SUB2API_INTEGRATION_RESEARCH.md
+│                              Sub2API 集成调研报告
 ├── DEVELOPMENT_PROCESS.md     开发流程与文档更新规则
 ├── DEVELOPMENT_LOG.md         全局开发日志
 ├── PROJECT_STATE.md           当前项目状态
@@ -54,8 +58,15 @@ docs/
 1. `docs/PROJECT_STATE.md`
 2. `docs/DEVELOPMENT_LOG.md`
 3. 当前开发模块的 `docs/modules/<module>/README.md`
-4. 如果出现重要方案选择，更新 `docs/DECISIONS.md`
-5. 如果影响整体架构，更新 `docs/ARCHITECTURE.md`
+4. 如果新增、修改、删除接口，更新 `docs/API_CONTRACT.md`
+5. 如果出现重要方案选择，更新 `docs/DECISIONS.md`
+6. 如果影响整体架构，更新 `docs/ARCHITECTURE.md`
+
+接口文档规则：
+
+- `docs/API_CONTRACT.md` 是前后端联调唯一接口口径。
+- 任何接口新增、字段调整、路径调整、错误码调整、删除或废弃，都必须同步更新该文件。
+- 接口开发完成前必须核对 `php artisan route:list --path=api/v1`。
 
 ## 5. 模块列表
 
@@ -73,7 +84,15 @@ docs/
 | Admin | `docs/modules/admin/README.md` | Filament 管理后台 |
 | Sub2API Integration | `docs/modules/integration-sub2api/README.md` | 与 Sub2API 的集成 |
 
-## 6. 当前最重要原则
+## 6. 实施计划
+
+完整开发计划见 `docs/IMPLEMENTATION_PLAN.md`。
+
+该计划按公共契约、后端任务线、前端任务线和联调验收拆分，后续开发应优先按计划中的任务编号推进。
+
+Sub2API 共享数据库、用户账号共用、Admin API 和上游账号用量调阅方案见 `docs/SUB2API_INTEGRATION_RESEARCH.md`。
+
+## 7. 当前最重要原则
 
 第一版先完成闭环：
 
@@ -87,4 +106,3 @@ docs/
 ```
 
 支付宝自动化、贡献系数、防躺平、活动配置放到后续阶段逐步开启。
-

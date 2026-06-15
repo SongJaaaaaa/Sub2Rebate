@@ -12,5 +12,4 @@
 | Audit | `docs/modules/audit/README.md` | 规划中 |
 | User Center | `docs/modules/user-center/README.md` | 规划中 |
 | Admin | `docs/modules/admin/README.md` | 规划中 |
-| Sub2API Integration | `docs/modules/integration-sub2api/README.md` | 规划中 |
-
+| Sub2API Integration | `docs/modules/integration-sub2api/README.md` | 已完成接口/源码调研，待生产凭据复核 |
