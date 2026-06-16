@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DataAnalysis, Setting, User, Wallet, Share, Coin, Document } from '@element-plus/icons-vue'
+import { DataAnalysis, Setting, User, Wallet, Share, Coin, Document, CreditCard } from '@element-plus/icons-vue'
 
 defineProps<{
   visible?: boolean
@@ -16,6 +16,8 @@ const items = [
   { path: '/admin/user-rebate', text: '返利层级', icon: Setting },
   { path: '/admin/api-quota', text: 'API额度', icon: Coin },
   { path: '/admin/withdrawals', text: '提现审核', icon: Wallet },
+  { path: '/admin/recharge-orders', text: '充值审核', icon: CreditCard },
+  { path: '/admin/payment-config', text: '支付配置', icon: Setting },
   { path: '/admin/rebate-config', text: '返利配置', icon: Setting },
   { path: '/admin/audit-log', text: '审计日志', icon: Document },
 ]

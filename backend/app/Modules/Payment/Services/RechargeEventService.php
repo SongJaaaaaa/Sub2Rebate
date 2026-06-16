@@ -100,7 +100,9 @@ class RechargeEventService
         $rate = $this->rate();
         $sourceCurrency = strtoupper(trim((string) ($data['source_currency'] ?? 'CNY')));
         $standardAmount = $this->money($amount);
-        $creditAmount = $this->money($amount * $rate);
+        $creditAmount = array_key_exists('credit_amount', $data) && is_numeric($data['credit_amount'])
+            ? $this->money($data['credit_amount'])
+            : $this->money($amount * $rate);
         $snapshot = [
             'payment.cny_to_credit_rate' => $this->money($rate),
         ];

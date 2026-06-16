@@ -128,7 +128,7 @@ Accept: application/json
 
 ### 1.8 当前已实现接口索引
 
-当前后端 `/api/v1` 已实现 44 个路由。
+当前后端 `/api/v1` 已实现 55 个路由。
 
 | 模块 | 方法 | 路径 | 权限 |
 |---|---|---|---|
@@ -1709,3 +1709,337 @@ PUT /api/v1/admin/users/{id}/rebate-override
 - 涉及金额的接口必须返回字符串金额。
 - 列表接口必须使用统一分页格式。
 - 涉及金额和权限的接口必须先补契约，再写实现和测试。
+
+## 10A. 充值接口
+
+### 10A.1 充值配置
+
+```text
+GET /api/v1/recharge/config
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "enabled": true,
+    "channel": "alipay",
+    "qrUrl": "https://example.com/alipay-qr.png",
+    "displayName": "张三-支付宝收款码",
+    "note": "付款时请备注订单号，支付后等待管理员审核到账。",
+    "expireMinutes": 15
+  }
+}
+```
+
+### 10A.2 创建充值订单
+
+```text
+POST /api/v1/recharge/orders
+```
+
+请求：
+
+```json
+{
+  "amount": "100.00"
+}
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 1,
+    "orderNo": "RC202606161530001234",
+    "channel": "alipay",
+    "amount": "100.00",
+    "bonusAmount": "5.00",
+    "creditAmount": "105.00",
+    "status": "pending",
+    "qrUrl": "https://example.com/alipay-qr.png",
+    "displayName": "张三-支付宝收款码",
+    "note": "付款时请备注订单号，支付后等待管理员审核到账。",
+    "expireAt": "2026-06-16 15:45:00"
+  }
+}
+```
+
+### 10A.3 提交付款信息
+
+```text
+POST /api/v1/recharge/orders/{id}/submit
+```
+
+请求：
+
+```json
+{
+  "payerName": "张三",
+  "payerAccount": "alipay-demo"
+}
+```
+
+响应：返回同订单结构，`status = submitted`。
+
+### 10A.4 充值订单列表
+
+```text
+GET /api/v1/recharge/orders?page=1&pageSize=20&status=submitted
+```
+
+### 10A.5 后台充值审核列表
+
+```text
+GET /api/v1/admin/recharge-orders?page=1&pageSize=20&status=submitted
+```
+
+### 10A.6 后台确认到账
+
+```text
+POST /api/v1/admin/recharge-orders/{id}/approve
+```
+
+请求：
+
+```json
+{
+  "remark": "已核对支付宝收款"
+}
+```
+
+说明：确认到账后会自动调用 Sub2API 增加 API 额度，并创建返利事件。
+
+### 10A.7 后台拒绝充值订单
+
+```text
+POST /api/v1/admin/recharge-orders/{id}/reject
+```
+
+请求：
+
+```json
+{
+  "remark": "付款信息不匹配"
+}
+```
+### 10A.8 后台读取支付配置
+
+```text
+GET /api/v1/admin/payment-config
+```
+
+认证：管理员。
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "enabled": true,
+    "channel": "alipay",
+    "qrUrl": "https://example.com/alipay-qr.png",
+    "displayName": "张三-支付宝收款码",
+    "note": "付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。",
+    "expireMinutes": 15,
+    "creditRate": "1"
+  }
+}
+```
+
+### 10A.9 后台保存支付配置
+
+```text
+PUT /api/v1/admin/payment-config
+```
+
+认证：管理员。
+
+请求：
+
+```json
+{
+  "enabled": true,
+  "qrUrl": "https://example.com/alipay-qr.png",
+  "displayName": "张三-支付宝收款码",
+  "note": "付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。",
+  "expireMinutes": 15,
+  "creditRate": "1"
+}
+```
+
+说明：
+
+- `enabled = true` 时，`qrUrl` 必填。
+- `qrUrl` 可以是公网图片 URL，也可以是后台上传本地图片后生成的 `data:image/...` 地址。
+- `expireMinutes` 范围是 1 到 1440。
+- `creditRate` 必须大于 0。
+- 保存后，用户侧 `GET /api/v1/recharge/config` 和创建充值订单返回的二维码会读取同一份配置。
+
+## 10B. 支付宝官方回调充值接口（升级方案）
+
+> 这一组接口只在 `payment.mode = alipay_precreate` 时启用。
+> 纯个人支付宝静态收款码仍走 10A 的人工审核版。
+
+### 10B.1 创建支付宝充值订单
+
+```text
+POST /api/v1/recharge/orders
+```
+
+请求：
+
+```json
+{
+  "amount": "100.00",
+  "channel": "alipay"
+}
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 1,
+    "orderNo": "RC202606161530001234",
+    "outTradeNo": "ALI202606161530001234",
+    "channel": "alipay",
+    "payMode": "alipay_precreate",
+    "amount": "100.00",
+    "bonusAmount": "5.00",
+    "creditAmount": "105.00",
+    "status": "pending",
+    "tradeStatus": "WAIT_BUYER_PAY",
+    "creditStatus": "pending",
+    "qrContent": "https://qr.alipay.com/baxxxxxxxxxxxx",
+    "expireAt": "2026-06-16 15:45:00"
+  }
+}
+```
+
+说明：后端创建本地订单后，调用支付宝 `alipay.trade.precreate`，返回订单二维码原始内容 `qrContent`。
+
+### 10B.2 查询充值订单详情
+
+```text
+GET /api/v1/recharge/orders/{id}
+```
+
+响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 1,
+    "orderNo": "RC202606161530001234",
+    "outTradeNo": "ALI202606161530001234",
+    "channel": "alipay",
+    "payMode": "alipay_precreate",
+    "amount": "100.00",
+    "bonusAmount": "5.00",
+    "creditAmount": "105.00",
+    "status": "approved",
+    "tradeStatus": "TRADE_SUCCESS",
+    "creditStatus": "success",
+    "paidAmount": "100.00",
+    "buyerLogonId": "z***@example.com",
+    "paidAt": "2026-06-16 15:32:10",
+    "expireAt": "2026-06-16 15:45:00"
+  }
+}
+```
+
+### 10B.3 支付宝异步回调
+
+```text
+POST /api/v1/payments/alipay/notify
+```
+
+认证：公开接口，仅支付宝服务器调用。
+
+请求格式：
+
+```text
+Content-Type: application/x-www-form-urlencoded
+```
+
+关键字段：
+
+| 字段 | 说明 |
+|---|---|
+| `out_trade_no` | 商户订单号 |
+| `trade_no` | 支付宝交易号 |
+| `trade_status` | 交易状态 |
+| `total_amount` | 支付金额 |
+| `buyer_logon_id` | 买家账号脱敏值 |
+| `notify_time` | 通知时间 |
+| `notify_id` | 通知 ID |
+| `sign` | 签名 |
+| `sign_type` | 签名类型 |
+
+成功响应：
+
+```text
+success
+```
+
+失败响应：
+
+```text
+fail
+```
+
+说明：
+
+- 后端必须先验签，再更新订单。
+- 验签通过但金额不一致时，必须记录回调日志并标记异常，不直接发放额度。
+- 回调处理成功后，由后端自动完成 Sub2API 加额度和返利事件创建。
+
+### 10B.4 后台手动查单 / 补单
+
+```text
+POST /api/v1/admin/recharge-orders/{id}/sync-pay
+```
+
+请求：
+
+```json
+{
+  "remark": "支付宝回调丢失，手动查单"
+}
+```
+
+说明：
+
+- 管理员主动向支付宝查询订单状态。
+- 查到 `TRADE_SUCCESS` 但本地未入账时，走同一套自动入账逻辑。
+- 这个接口主要用于补单，不给普通用户开放。
+
+### 10B.5 后台关闭未支付订单
+
+```text
+POST /api/v1/admin/recharge-orders/{id}/close
+```
+
+请求：
+
+```json
+{
+  "remark": "订单超时关闭"
+}
+```
+
+说明：关闭后本地订单状态更新为 `closed`，必要时同步调用支付宝关单接口。

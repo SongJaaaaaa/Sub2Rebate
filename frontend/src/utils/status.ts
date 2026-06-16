@@ -1,4 +1,5 @@
 import type { WithdrawStatus } from '@/types/withdraw'
+import type { RechargeStatus } from '@/types/recharge'
 import type { RebateStatus, RebateType } from '@/types/rebate'
 
 type TagType = 'info' | 'primary' | 'success' | 'warning' | 'danger'
@@ -15,6 +16,14 @@ const withdrawMap: Record<WithdrawStatus, StatusDisplay> = {
   rejected: { text: '已拒绝', type: 'danger' },
   failed: { text: '失败', type: 'danger' },
   canceled: { text: '已取消', type: 'info' },
+}
+
+const rechargeStatusMap: Record<RechargeStatus, StatusDisplay> = {
+  pending: { text: '待支付', type: 'warning' },
+  submitted: { text: '待审核', type: 'primary' },
+  approved: { text: '已到账', type: 'success' },
+  rejected: { text: '已拒绝', type: 'danger' },
+  expired: { text: '已过期', type: 'info' },
 }
 
 const rebateStatusMap: Record<RebateStatus, StatusDisplay> = {
@@ -39,3 +48,6 @@ export const getRebateStatusDisplay = (status: RebateStatus): StatusDisplay =>
 
 export const getRebateTypeText = (type: RebateType): string =>
   rebateTypeMap[type] || type
+
+export const getRechargeStatus = (status: RechargeStatus): StatusDisplay =>
+  rechargeStatusMap[status] || { text: status, type: 'info' }

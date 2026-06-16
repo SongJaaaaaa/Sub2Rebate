@@ -2,7 +2,7 @@ import { request } from '@/utils/request'
 import { useMock, delay } from '@/mocks'
 import { mockAdminUsers, mockAdminWithdrawals, mockRebateConfig, mockAdminDashboardStats, mockAdminTrends, mockFullRebateConfig, mockRelationshipTree } from '@/mocks/admin'
 import type { ApiRes, PageRes } from '@/types/api'
-import type { AdminUser, AdminWithdrawRecord, RebateConfig, AdminDashboardStats, AdminTrendItem, FullRebateConfig, RelationshipNode } from '@/types/admin'
+import type { AdminUser, AdminWithdrawRecord, RebateConfig, AdminDashboardStats, AdminTrendItem, FullRebateConfig, RelationshipNode, AdminPaymentConfig } from '@/types/admin'
 
 // ============ 数据看板 ============
 
@@ -92,6 +92,34 @@ export const rejectWithdraw = async (id: number, reason: string): Promise<ApiRes
     return { code: 0, message: 'ok', data: null }
   }
   return request.post(`/admin/withdrawals/${id}/reject`, { reason })
+}
+
+// ============ 支付配置 ============
+
+const mockPaymentConfig: AdminPaymentConfig = {
+  enabled: true,
+  channel: 'alipay',
+  qrUrl: 'https://via.placeholder.com/320x320.png?text=Alipay+QR',
+  displayName: '支付宝收款码',
+  note: '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。',
+  expireMinutes: 15,
+  creditRate: '1',
+}
+
+export const getAdminPaymentConfig = async (): Promise<ApiRes<AdminPaymentConfig>> => {
+  if (useMock) {
+    await delay()
+    return { code: 0, message: 'ok', data: mockPaymentConfig }
+  }
+  return request.get('/admin/payment-config')
+}
+
+export const saveAdminPaymentConfig = async (data: AdminPaymentConfig): Promise<ApiRes<AdminPaymentConfig>> => {
+  if (useMock) {
+    await delay(400)
+    return { code: 0, message: 'ok', data }
+  }
+  return request.put('/admin/payment-config', data)
 }
 
 // ============ 返利配置（完整版） ============

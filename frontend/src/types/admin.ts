@@ -19,28 +19,38 @@ export interface AdminWithdrawRecord extends WithdrawRecord {
   nickname: string
 }
 
+export interface AdminPaymentConfig {
+  enabled: boolean
+  channel: 'alipay'
+  qrUrl: string
+  displayName: string
+  note: string
+  expireMinutes: number
+  creditRate: string
+}
+
 // 管理端 — 返利配置（完整）
 export interface MilestoneConfig {
-  threshold: string  // 里程碑额度 CNY
-  reward: string     // 奖励金额 CNY
-  maxTimes: number   // 奖励次数限制
+  threshold: string
+  reward: string
+  maxTimes: number
 }
 
 export interface MultiLevelConfig {
   enabled: boolean
-  totalPoolRate: string   // 总返利池比例 如 "15" 表示 15%
-  decayCoefficient: string // 衰减系数 如 "0.5"
-  maxDepth: number         // 最大返利深度
+  totalPoolRate: string
+  decayCoefficient: string
+  maxDepth: number
 }
 
 export interface WithdrawLimitConfig {
-  minAmount: string       // 单次最低提现额
-  cooldownHours: number   // 提现冷却时间（小时）
+  minAmount: string
+  cooldownHours: number
 }
 
 export interface RiskControlConfig {
-  blacklistEnabled: boolean       // 全局黑名单总开关
-  autoFreezeThreshold: number     // 异常操作次数/小时
+  blacklistEnabled: boolean
+  autoFreezeThreshold: number
 }
 
 export interface FullRebateConfig {
@@ -58,7 +68,7 @@ export interface RelationshipNode {
   username: string
   nickname: string
   avatar: string
-  level: string          // 如 "Top Master", "Referral L1", "VIP Partner"
+  level: string
   totalRecharge: string
   directReferrals: number
   status: 'active' | 'banned' | 'warning'
@@ -234,3 +244,5 @@ export interface UserRebateOverride {
   enabled: boolean
   updatedAt: string
 }
+
+export type { AdminRechargeOrder } from '@/types/recharge'

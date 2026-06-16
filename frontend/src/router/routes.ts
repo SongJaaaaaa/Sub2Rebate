@@ -34,6 +34,8 @@ export const routes: RouteRecordRaw[] = [
       { path: 'user-rebate', name: 'admin-user-rebate', component: () => import('@/views/admin/AdminUserRebateView.vue'), meta: { title: '用户返利设置', requiresAdmin: true } },
       { path: 'api-quota', name: 'admin-api-quota', component: () => import('@/views/admin/AdminApiQuotaView.vue'), meta: { title: 'API额度管理', requiresAdmin: true } },
       { path: 'withdrawals', name: 'admin-withdrawals', component: () => import('@/views/admin/AdminWithdrawalsView.vue'), meta: { title: '提现审核', requiresAdmin: true } },
+      { path: 'recharge-orders', name: 'admin-recharge-orders', component: () => import('@/views/admin/AdminRechargeOrdersView.vue'), meta: { title: '充值审核', requiresAdmin: true } },
+      { path: 'payment-config', name: 'admin-payment-config', component: () => import('@/views/admin/AdminPaymentConfigView.vue'), meta: { title: '支付配置', requiresAdmin: true } },
       { path: 'rebate-config', name: 'admin-rebate-config', component: () => import('@/views/admin/AdminRebateConfigView.vue'), meta: { title: '返利配置', requiresAdmin: true } },
       { path: 'audit-log', name: 'admin-audit-log', component: () => import('@/views/admin/AdminAuditLogView.vue'), meta: { title: '审计日志', requiresAdmin: true } },
     ],

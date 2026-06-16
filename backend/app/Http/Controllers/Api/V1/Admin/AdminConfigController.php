@@ -42,6 +42,44 @@ class AdminConfigController extends Controller
         return $this->show();
     }
 
+    public function payment(): JsonResponse
+    {
+        return ApiResponse::ok($this->paymentPayload());
+    }
+
+    public function updatePayment(Request $request): JsonResponse
+    {
+        $enabled = $request->boolean('enabled', true);
+        $qrUrl = trim((string) $request->input('qrUrl', ''));
+        $displayName = trim((string) $request->input('displayName', ''));
+        $note = trim((string) $request->input('note', '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。'));
+        $expireMinutes = (int) $request->input('expireMinutes', 15);
+        $creditRate = trim((string) $request->input('creditRate', '1'));
+
+        if ($enabled && $qrUrl === '') {
+            return ApiResponse::fail(ApiError::VALIDATION_FAILED, '开启二维码充值时必须提供支付宝二维码', null, 422);
+        }
+
+        if ($expireMinutes < 1 || $expireMinutes > 1440) {
+            return ApiResponse::fail(ApiError::VALIDATION_FAILED, '充值订单有效期必须在 1 到 1440 分钟之间', null, 422);
+        }
+
+        if (! is_numeric($creditRate) || (float) $creditRate <= 0) {
+            return ApiResponse::fail(ApiError::VALIDATION_FAILED, '人民币额度换算比例必须大于 0', null, 422);
+        }
+
+        $this->configs->updateBatch([
+            'payment.qr_enabled' => $enabled,
+            'payment.alipay_qr_url' => $qrUrl,
+            'payment.alipay_display_name' => $displayName,
+            'payment.qr_note' => $note,
+            'payment.order_expire_minutes' => $expireMinutes,
+            'payment.cny_to_credit_rate' => $creditRate,
+        ], $request->user());
+
+        return $this->payment();
+    }
+
     private function validateItems(array $items): ?string
     {
         foreach ($items as $key => $value) {
@@ -67,7 +105,7 @@ class AdminConfigController extends Controller
             if ($num !== null && array_key_exists('max', $rule) && $num > $rule['max']) {
                 return $rule['name'].'不能大于 '.$rule['max'];
             }
-            if (($rule['type'] ?? '') === 'string' && ! in_array((string) $value, $rule['in'], true)) {
+            if (($rule['type'] ?? '') === 'string' && array_key_exists('in', $rule) && ! in_array((string) $value, $rule['in'], true)) {
                 return $rule['name'].'不正确';
             }
         }
@@ -84,10 +122,24 @@ class AdminConfigController extends Controller
             'rebate.pool_ratio' => ['name' => '返利池比例', 'type' => 'number', 'min' => 0, 'max' => 1],
             'rebate.decay_factor' => ['name' => '衰减系数', 'type' => 'number', 'min' => 0.000001, 'max' => 1],
             'payment.cny_to_credit_rate' => ['name' => '人民币额度换算比例', 'type' => 'number', 'min' => 0.000001],
+            'payment.order_expire_minutes' => ['name' => '充值订单有效期', 'type' => 'number', 'min' => 1, 'max' => 1440],
             'withdraw.min_amount' => ['name' => '最低提现金额', 'type' => 'number', 'min' => 0.01],
             'withdraw.daily_limit' => ['name' => '每日提现次数', 'type' => 'number', 'min' => 1, 'max' => 100],
             'withdraw.freeze_days' => ['name' => '返利冻结天数', 'type' => 'number', 'min' => 0, 'max' => 365],
             'withdraw.review_mode' => ['name' => '提现审核模式', 'type' => 'string', 'in' => ['manual', 'auto']],
+        ];
+    }
+
+    private function paymentPayload(): array
+    {
+        return [
+            'enabled' => (bool) $this->configs->get('payment.qr_enabled', true),
+            'channel' => 'alipay',
+            'qrUrl' => trim((string) $this->configs->get('payment.alipay_qr_url', '')),
+            'displayName' => trim((string) $this->configs->get('payment.alipay_display_name', '')),
+            'note' => trim((string) $this->configs->get('payment.qr_note', '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。')),
+            'expireMinutes' => max(1, (int) $this->configs->get('payment.order_expire_minutes', 15)),
+            'creditRate' => (string) $this->configs->get('payment.cny_to_credit_rate', '1'),
         ];
     }
 }
