@@ -1,0 +1,41 @@
+:root {
+  --el-color-primary: #4648d4;
+  --el-color-primary-light-3: #7072e0;
+  --el-color-primary-light-5: #a2a3eb;
+  --el-color-primary-light-7: #c9c9f4;
+  --el-color-primary-light-9: #ededfc;
+  --el-color-primary-dark-2: #3839aa;
+  --el-color-success: #10b981;
+  --el-color-warning: #f59e0b;
+  --el-color-danger: #ef4444;
+  --el-color-info: #64748b;
+  --el-border-radius-base: 8px;
+  --el-font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  --el-fill-color-blank: #ffffff;
+}
+
+.el-button {
+  font-weight: 600;
+}
+
+.el-table th.el-table__cell {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--sr-muted);
+  background: var(--sr-surface-low);
+}
+
+.el-table td.el-table__cell {
+  border-bottom-color: var(--sr-border);
+}
+
+.el-form-item__label {
+  font-weight: 600;
+  color: var(--sr-primary);
+}
+
+.el-input__wrapper:focus-within {
+  box-shadow: 0 0 0 2px rgba(70, 72, 212, 0.15) !important;
+}

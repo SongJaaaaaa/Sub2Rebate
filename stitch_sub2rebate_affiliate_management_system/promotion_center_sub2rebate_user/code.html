@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Promotion Center - Sub2Rebate</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#6ffbbe",
+                    "primary": "#000000",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "surface-variant": "#e0e3e5",
+                    "on-error-container": "#93000a",
+                    "on-error": "#ffffff",
+                    "surface-container-highest": "#e0e3e5",
+                    "error-destructive": "#EF4444",
+                    "on-secondary": "#ffffff",
+                    "rebate-success": "#10B981",
+                    "secondary-fixed-dim": "#c0c1ff",
+                    "inverse-on-surface": "#eff1f3",
+                    "border-subtle": "#E2E8F0",
+                    "surface-tint": "#565e74",
+                    "on-primary": "#ffffff",
+                    "primary-container": "#131b2e",
+                    "text-muted": "#64748B",
+                    "on-surface": "#191c1e",
+                    "on-secondary-container": "#fffbff",
+                    "on-surface-variant": "#45464d",
+                    "inverse-surface": "#2d3133",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-fixed": "#dae2fd",
+                    "on-background": "#191c1e",
+                    "surface-dim": "#d8dadc",
+                    "secondary": "#4648d4",
+                    "on-primary-container": "#7c839b",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "surface": "#f7f9fb",
+                    "error": "#ba1a1a",
+                    "tertiary-container": "#002113",
+                    "outline-variant": "#c6c6cd",
+                    "on-primary-fixed": "#131b2e",
+                    "surface-container": "#eceef0",
+                    "surface-white": "#FFFFFF",
+                    "outline": "#76777d",
+                    "on-secondary-fixed-variant": "#2f2ebe",
+                    "surface-container-high": "#e6e8ea",
+                    "background": "#f7f9fb",
+                    "surface-bright": "#f7f9fb",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "on-secondary-fixed": "#07006c",
+                    "tertiary": "#000000",
+                    "primary-fixed-dim": "#bec6e0",
+                    "on-tertiary-fixed": "#002113",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-primary": "#bec6e0",
+                    "secondary-container": "#6063ee",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#009668",
+                    "secondary-fixed": "#e1e0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "stack-sm": "8px",
+                    "base": "4px",
+                    "stack-md": "16px",
+                    "gutter-mobile": "16px",
+                    "container-padding": "24px",
+                    "gutter-desktop": "24px"
+            },
+            "fontFamily": {
+                    "metric-xl": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"]
+            },
+            "fontSize": {
+                    "metric-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E2E8F0;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        @media (max-width: 768px) {
+            .bento-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased">
+<!-- Side Navigation Bar -->
+<aside class="h-full w-64 fixed left-0 top-0 hidden md:block bg-surface-white dark:bg-surface-container-lowest border-r border-border-subtle dark:border-outline-variant z-50">
+<div class="flex flex-col h-full py-6">
+<div class="px-6 mb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Sub2Rebate</h1>
+<p class="text-text-muted font-body-md text-body-md">Affiliate Portal</p>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-text-muted dark:text-on-surface-variant hover:text-primary hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary font-bold border-r-4 border-secondary bg-surface-container-low dark:bg-surface-container transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-body-md text-body-md">Promotion</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-text-muted dark:text-on-surface-variant hover:text-primary hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-body-md text-body-md">Withdrawals</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-text-muted dark:text-on-surface-variant hover:text-primary hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full bg-secondary text-on-secondary py-3 rounded-xl font-label-md text-label-md active:scale-95 transition-transform">
+                    Withdraw Funds
+                </button>
+</div>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="fixed top-0 z-40 bg-surface-white dark:bg-surface-container-lowest border-b border-border-subtle dark:border-outline-variant flex justify-between items-center h-16 px-6 w-full ml-0 md:ml-64 max-w-[calc(100%-16rem)]">
+<div class="flex items-center gap-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary md:hidden">Sub2Rebate</h1>
+<div class="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-border-subtle">
+<span class="material-symbols-outlined text-text-muted mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-md font-label-md w-48" placeholder="Search affiliate assets..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden lg:block text-right">
+<p class="font-label-sm text-label-sm text-text-muted">Balance</p>
+<p class="font-label-md text-label-md font-bold text-primary">$12,450.00</p>
+</div>
+<button class="hidden sm:block text-secondary font-bold font-label-md text-label-md hover:text-primary transition-colors">Withdraw</button>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted cursor-pointer hover:text-primary" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-text-muted cursor-pointer hover:text-primary" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-20 md:pb-8 px-6 ml-0 md:ml-64 transition-all duration-300">
+<div class="max-w-7xl mx-auto space-y-8">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Promotion Center</h2>
+<p class="text-text-muted font-body-md text-body-md">Scale your earnings by expanding your referral network.</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 bg-surface-white border border-border-subtle px-4 py-2 rounded-lg font-label-md text-label-md text-primary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" data-icon="download">download</span> Reports
+                    </button>
+<button class="flex items-center gap-2 bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" data-icon="add">add</span> New Campaign
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Content -->
+<div class="bento-grid">
+<!-- Referral Link & QR Code (8 Columns) -->
+<section class="col-span-full lg:col-span-8 bg-surface-white rounded-xl border border-border-subtle p-6 flex flex-col md:flex-row gap-8 relative overflow-hidden">
+<div class="flex-1 space-y-6 relative z-10">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary mb-1">Your Referral Engine</h3>
+<p class="text-text-muted font-body-md text-body-md">Share this link to start earning multi-level rebates from every trade your network makes.</p>
+</div>
+<div class="space-y-4">
+<div class="flex items-center p-1 bg-surface-container-low border border-border-subtle rounded-xl">
+<input class="flex-1 bg-transparent border-none focus:ring-0 font-body-md text-body-md px-4 text-primary" readonly="" type="text" value="https://sub2rebate.com/ref/AFF_99210"/>
+<button class="bg-primary text-on-primary px-6 py-3 rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex items-center gap-2" onclick="copyLink(this)">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span> Copy Link
+                                </button>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-text-muted font-label-sm text-label-sm uppercase tracking-wider">Share via</span>
+<div class="flex gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full border border-border-subtle hover:bg-surface-container-low transition-colors"><span class="material-symbols-outlined" data-icon="send">send</span></button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full border border-border-subtle hover:bg-surface-container-low transition-colors"><span class="material-symbols-outlined text-rebate-success" data-icon="chat">chat</span></button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full border border-border-subtle hover:bg-surface-container-low transition-colors"><span class="material-symbols-outlined text-secondary" data-icon="public">public</span></button>
+</div>
+</div>
+</div>
+</div>
+<div class="w-full md:w-48 flex flex-col items-center justify-center p-4 bg-surface-container-lowest rounded-xl border border-border-subtle text-center space-y-3 shrink-0">
+<img alt="Referral QR Code" class="w-32 h-32 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuYZp3TIGC5Y5IO8N-KRN8ZevwFPUGGK5Ujs8Y530yfnzfzPpSwC6Bq_H6p0h-pApcdskNy7MoNX14NyTDSTRsHwomDNB__3GMWUwPm7Z9A_aZO96a0hUmsreOZn6mhjzlOE0bxqDlj0XTMvo8hd79N6a0AMEDrwjcHPR1BVSIP5tg3qTO1w8aI9swwNDeAHm_4b3xpUBzMUzmJ45r2zzW0Nuxu_l061iHVCt4DjK93ZVnhfI1W32Ca4iK1DDbhB8Rry7OudWt368"/>
+<p class="font-label-sm text-label-sm text-text-muted">Personal QR Code</p>
+<button class="text-secondary font-bold font-label-sm text-label-sm hover:underline">Download QR</button>
+</div>
+<!-- Decorative Background Element -->
+<div class="absolute -right-12 -top-12 w-64 h-64 bg-secondary/5 rounded-full blur-3xl pointer-events-none"></div>
+</section>
+<!-- Network Performance Summary (4 Columns) -->
+<section class="col-span-full lg:col-span-4 space-y-4">
+<div class="bg-surface-white rounded-xl border border-border-subtle p-6 hover:shadow-sm transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-primary/5 rounded-lg text-primary"><span class="material-symbols-outlined" data-icon="groups">groups</span></span>
+<span class="text-rebate-success font-label-sm text-label-sm flex items-center">+12% <span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span></span>
+</div>
+<h4 class="text-text-muted font-label-md text-label-md">Total Referrals</h4>
+<p class="font-metric-xl text-metric-xl text-primary">1,284</p>
+</div>
+<div class="bg-surface-white rounded-xl border border-border-subtle p-6 hover:shadow-sm transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-secondary/5 rounded-lg text-secondary"><span class="material-symbols-outlined" data-icon="verified">verified</span></span>
+<span class="text-text-muted font-label-sm text-label-sm flex items-center">Active <span class="material-symbols-outlined text-[14px]" data-icon="circle" style="font-variation-settings: 'FILL' 1;">circle</span></span>
+</div>
+<h4 class="text-text-muted font-label-md text-label-md">Active Referrers</h4>
+<p class="font-metric-xl text-metric-xl text-primary">452</p>
+</div>
+</section>
+<!-- Multi-Level Rebate Structure (Full Width) -->
+<section class="col-span-full bg-surface-white rounded-xl border border-border-subtle p-6">
+<div class="flex flex-col md:flex-row justify-between md:items-center mb-10 gap-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Multi-Level Rebate Breakdown</h3>
+<p class="text-text-muted font-body-md text-body-md">Visualize your earning potential across 5 levels of depth.</p>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low p-1 rounded-lg">
+<button class="px-4 py-1 rounded bg-surface-white shadow-sm font-label-sm text-label-sm text-primary">Percentage %</button>
+<button class="px-4 py-1 rounded font-label-sm text-label-sm text-text-muted hover:text-primary transition-colors">Projected $</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
+<!-- Level 1 -->
+<div class="flex flex-col items-center p-6 bg-primary-container text-on-primary-container rounded-2xl relative z-10 border-2 border-primary">
+<span class="w-8 h-8 flex items-center justify-center bg-primary rounded-full text-on-primary font-bold mb-4">L1</span>
+<p class="font-label-sm text-label-sm opacity-70 uppercase tracking-widest mb-1">Direct</p>
+<p class="font-metric-xl text-metric-xl mb-4">40%</p>
+<div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+<div class="bg-white h-full w-full"></div>
+</div>
+</div>
+<!-- Level 2 -->
+<div class="flex flex-col items-center p-6 bg-surface-container-low rounded-2xl border border-border-subtle relative group hover:border-secondary transition-colors">
+<span class="w-8 h-8 flex items-center justify-center bg-secondary/10 text-secondary rounded-full font-bold mb-4">L2</span>
+<p class="font-label-sm text-label-sm text-text-muted uppercase tracking-widest mb-1">Tier 2</p>
+<p class="font-metric-xl text-metric-xl text-primary mb-4">15%</p>
+<div class="w-full bg-border-subtle h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[37%]"></div>
+</div>
+</div>
+<!-- Level 3 -->
+<div class="flex flex-col items-center p-6 bg-surface-container-low rounded-2xl border border-border-subtle relative group hover:border-secondary transition-colors">
+<span class="w-8 h-8 flex items-center justify-center bg-secondary/10 text-secondary rounded-full font-bold mb-4">L3</span>
+<p class="font-label-sm text-label-sm text-text-muted uppercase tracking-widest mb-1">Tier 3</p>
+<p class="font-metric-xl text-metric-xl text-primary mb-4">10%</p>
+<div class="w-full bg-border-subtle h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[25%]"></div>
+</div>
+</div>
+<!-- Level 4 -->
+<div class="flex flex-col items-center p-6 bg-surface-container-low rounded-2xl border border-border-subtle relative group hover:border-secondary transition-colors">
+<span class="w-8 h-8 flex items-center justify-center bg-secondary/10 text-secondary rounded-full font-bold mb-4">L4</span>
+<p class="font-label-sm text-label-sm text-text-muted uppercase tracking-widest mb-1">Tier 4</p>
+<p class="font-metric-xl text-metric-xl text-primary mb-4">5%</p>
+<div class="w-full bg-border-subtle h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[12%]"></div>
+</div>
+</div>
+<!-- Level 5 -->
+<div class="flex flex-col items-center p-6 bg-surface-container-low rounded-2xl border border-border-subtle relative group hover:border-secondary transition-colors">
+<span class="w-8 h-8 flex items-center justify-center bg-secondary/10 text-secondary rounded-full font-bold mb-4">L5</span>
+<p class="font-label-sm text-label-sm text-text-muted uppercase tracking-widest mb-1">Tier 5</p>
+<p class="font-metric-xl text-metric-xl text-primary mb-4">2%</p>
+<div class="w-full bg-border-subtle h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[5%]"></div>
+</div>
+</div>
+<!-- Connection Line (Hidden on mobile) -->
+<div class="hidden md:block absolute top-1/2 left-0 w-full h-[1px] bg-border-subtle -z-0"></div>
+</div>
+<div class="mt-8 p-4 bg-surface-container-low rounded-xl border border-border-subtle flex items-start gap-4">
+<span class="material-symbols-outlined text-secondary" data-icon="info">info</span>
+<p class="font-body-md text-body-md text-text-muted">Earnings are calculated based on the net trading volume generated by users in your respective tiers. Tier 1 users are your direct sign-ups. Subsequent tiers represent users recruited by your downline.</p>
+</div>
+</section>
+<!-- Activity Feed / Growth (6 Columns) -->
+<section class="col-span-full lg:col-span-6 bg-surface-white rounded-xl border border-border-subtle overflow-hidden flex flex-col">
+<div class="p-6 border-b border-border-subtle flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-primary">Recent Conversions</h3>
+<a class="text-secondary font-bold font-label-md text-label-md hover:underline" href="#">View All</a>
+</div>
+<div class="flex-1 overflow-y-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-6 py-3 font-label-sm text-label-sm text-text-muted uppercase tracking-wider">User ID</th>
+<th class="px-6 py-3 font-label-sm text-label-sm text-text-muted uppercase tracking-wider">Level</th>
+<th class="px-6 py-3 font-label-sm text-label-sm text-text-muted uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 font-label-sm text-label-sm text-text-muted uppercase tracking-wider">Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-6 py-4 font-body-md text-body-md text-primary">USR_8821</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary"><span class="px-2 py-1 bg-primary/5 rounded font-bold text-[12px]">L1</span></td>
+<td class="px-6 py-4"><span class="px-2 py-1 bg-rebate-success/10 text-rebate-success rounded-full font-label-sm text-label-sm">Verified</span></td>
+<td class="px-6 py-4 font-body-md text-body-md text-text-muted">2m ago</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-6 py-4 font-body-md text-body-md text-primary">USR_4412</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary"><span class="px-2 py-1 bg-secondary/5 rounded font-bold text-[12px]">L3</span></td>
+<td class="px-6 py-4"><span class="px-2 py-1 bg-rebate-success/10 text-rebate-success rounded-full font-label-sm text-label-sm">Verified</span></td>
+<td class="px-6 py-4 font-body-md text-body-md text-text-muted">15m ago</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-6 py-4 font-body-md text-body-md text-primary">USR_1022</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary"><span class="px-2 py-1 bg-primary/5 rounded font-bold text-[12px]">L1</span></td>
+<td class="px-6 py-4"><span class="px-2 py-1 bg-secondary/10 text-secondary rounded-full font-label-sm text-label-sm">Pending</span></td>
+<td class="px-6 py-4 font-body-md text-body-md text-text-muted">1h ago</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Promotional Assets (6 Columns) -->
+<section class="col-span-full lg:col-span-6 bg-surface-white rounded-xl border border-border-subtle p-6 flex flex-col">
+<h3 class="font-headline-md text-headline-md text-primary mb-6">Marketing Assets</h3>
+<div class="grid grid-cols-2 gap-4 flex-1">
+<div class="aspect-video bg-surface-container-low rounded-lg border border-border-subtle flex flex-col items-center justify-center p-4 text-center group cursor-pointer hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors mb-2" data-icon="image">image</span>
+<p class="font-label-sm text-label-sm text-text-muted group-hover:text-primary">Banner Pack (728x90)</p>
+</div>
+<div class="aspect-video bg-surface-container-low rounded-lg border border-border-subtle flex flex-col items-center justify-center p-4 text-center group cursor-pointer hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors mb-2" data-icon="video_library">video_library</span>
+<p class="font-label-sm text-label-sm text-text-muted group-hover:text-primary">Social Reels Kit</p>
+</div>
+<div class="aspect-video bg-surface-container-low rounded-lg border border-border-subtle flex flex-col items-center justify-center p-4 text-center group cursor-pointer hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-text-muted group-hover:text-primary transition-colors mb-2" data-icon="description">description</span>
+<p class="font-label-sm text-label-sm text-text-muted group-hover:text-primary">E-mail Templates</p>
+</div>
+<div class="aspect-video bg-primary-container rounded-lg border border-primary flex flex-col items-center justify-center p-4 text-center group cursor-pointer active:scale-95 transition-all">
+<span class="material-symbols-outlined text-on-primary-container mb-2" data-icon="file_download">file_download</span>
+<p class="font-label-sm text-label-sm text-on-primary-container">Download Complete Kit</p>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile only) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-2 bg-surface-white dark:bg-surface-container-lowest border-t border-border-subtle dark:border-outline-variant shadow-lg z-50 md:hidden">
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant hover:bg-surface-container-low px-4" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary font-bold hover:bg-surface-container-low px-4" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-label-sm text-label-sm">Promos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant hover:bg-surface-container-low px-4" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-label-sm text-label-sm">Payouts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-muted dark:text-on-surface-variant hover:bg-surface-container-low px-4" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</a>
+</nav>
+<!-- Floating Action Button (Mobile Contextual) -->
+<button class="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-secondary text-on-secondary rounded-full shadow-xl flex items-center justify-center active:scale-95 transition-all z-40">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+</button>
+<script>
+        function copyLink(btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check</span> Copied';
+            btn.classList.replace('bg-primary', 'bg-rebate-success');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.replace('bg-rebate-success', 'bg-primary');
+            }, 2000);
+            
+            // Interaction logic
+            const input = btn.previousElementSibling;
+            input.select();
+            document.execCommand('copy');
+        }
+    </script>
+</body></html>

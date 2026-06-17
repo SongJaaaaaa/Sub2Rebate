@@ -1,0 +1,30 @@
+:root {
+  /* Surface */
+  --sr-surface: #f7f9fb;
+  --sr-surface-white: #ffffff;
+  --sr-surface-low: #f2f4f6;
+  --sr-surface-container: #eceef0;
+  --sr-surface-container-high: #e6e8ea;
+
+  /* Border */
+  --sr-border: #e2e8f0;
+
+  /* Text */
+  --sr-primary: #0f172a;
+  --sr-secondary: #4648d4;
+  --sr-muted: #64748b;
+
+  /* Semantic */
+  --sr-success: #10b981;
+  --sr-danger: #ef4444;
+  --sr-warning: #f59e0b;
+  --sr-info: #6366f1;
+
+  /* Radius */
+  --sr-radius: 8px;
+  --sr-card-radius: 16px;
+  --sr-pill-radius: 9999px;
+
+  /* Transitions */
+  --sr-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}

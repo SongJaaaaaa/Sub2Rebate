@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sub2Rebate | Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#f2f4f6",
+                    "inverse-surface": "#2d3133",
+                    "on-surface-variant": "#45464d",
+                    "on-surface": "#191c1e",
+                    "on-secondary-container": "#fffbff",
+                    "on-background": "#191c1e",
+                    "primary-fixed": "#dae2fd",
+                    "primary-container": "#131b2e",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#565e74",
+                    "text-muted": "#64748B",
+                    "secondary-fixed-dim": "#c0c1ff",
+                    "rebate-success": "#10B981",
+                    "on-secondary": "#ffffff",
+                    "error-destructive": "#EF4444",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-error": "#ffffff",
+                    "border-subtle": "#E2E8F0",
+                    "inverse-on-surface": "#eff1f3",
+                    "primary": "#000000",
+                    "tertiary-fixed": "#6ffbbe",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e0e3e5",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "on-tertiary": "#ffffff",
+                    "inverse-primary": "#bec6e0",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed": "#002113",
+                    "tertiary": "#000000",
+                    "primary-fixed-dim": "#bec6e0",
+                    "secondary-fixed": "#e1e0ff",
+                    "on-tertiary-container": "#009668",
+                    "secondary-container": "#6063ee",
+                    "error-container": "#ffdad6",
+                    "background": "#f7f9fb",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary-fixed-variant": "#2f2ebe",
+                    "on-secondary-fixed": "#07006c",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container": "#eceef0",
+                    "on-primary-fixed": "#131b2e",
+                    "outline-variant": "#c6c6cd",
+                    "tertiary-container": "#002113",
+                    "outline": "#76777d",
+                    "surface-white": "#FFFFFF",
+                    "secondary": "#4648d4",
+                    "surface-dim": "#d8dadc",
+                    "error": "#ba1a1a",
+                    "surface": "#f7f9fb",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "on-primary-container": "#7c839b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter-desktop": "24px",
+                    "container-padding": "24px",
+                    "base": "4px",
+                    "stack-sm": "8px",
+                    "stack-md": "16px",
+                    "gutter-mobile": "16px",
+                    "stack-lg": "32px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "metric-xl": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "display-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "metric-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .sidebar-item-active {
+            position: relative;
+        }
+        .sidebar-item-active::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #6063ee;
+            border-radius: 4px 0 0 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Sidebar (Shared Component JSON logic applied) -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-inverse-surface flex flex-col py-gutter-desktop px-4 border-r border-outline-variant z-50">
+<div class="mb-8 px-2 flex items-center gap-3">
+<div class="w-10 h-10 bg-secondary-container flex items-center justify-center rounded-lg shadow-sm">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">universal_currency_alt</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-on-primary-container leading-none">Sub2Rebate</h1>
+<p class="text-label-sm text-on-surface-variant/70 mt-1">Fintech Dashboard</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+<!-- Navigation Items Mapping -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary-fixed-dim font-bold sidebar-item-active bg-surface-variant/10 transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-white hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-label-md">Users</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-white hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">link</span>
+<span class="text-label-md">Referrals</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-white hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-label-md">Rebates</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-white hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="text-label-md">Withdrawals</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-white hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">settings_suggest</span>
+<span class="text-label-md">Config</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-white hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span class="text-label-md">Audit</span>
+</a>
+</nav>
+<div class="pt-4 mt-4 border-t border-white/10 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-label-md">Support</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-error-destructive hover:bg-error-destructive/10 transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-label-md">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen">
+<!-- TopAppBar (Shared Component JSON logic applied) -->
+<header class="flex justify-between items-center w-full h-16 px-gutter-desktop sticky top-0 z-40 bg-surface-white/80 backdrop-blur-md border-b border-border-subtle">
+<div class="flex items-center gap-6">
+<nav class="flex gap-4">
+<a class="text-primary font-bold border-b-2 border-primary py-4 text-label-sm" href="#">Overview</a>
+<a class="text-text-muted hover:text-primary transition-colors py-4 text-label-sm" href="#">Analytics</a>
+<a class="text-text-muted hover:text-primary transition-colors py-4 text-label-sm" href="#">Security</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-4 py-2 bg-secondary-container text-white rounded-lg text-label-md hover:opacity-90 transition-opacity">Withdraw</button>
+<div class="flex items-center gap-2 border-l border-border-subtle pl-4 ml-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="flex items-center gap-2 cursor-pointer hover:bg-surface-container p-1 pr-3 rounded-full transition-colors">
+<img alt="Admin Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUeoKGud0P64TU7_4Q379SI6jLyj-yXDhK688TrZzjXHTuY9QWJn_gDj7InhfVF0_3ODnnj-YX7-jPspNTuJdJMfJ13ajNQ-sfc95YGSdjuriF06tD7rRPXhsfDaCwI4QJnmo8o7m0_ROPlRai-pqhK-MBEABWrq68433ZrmFM_xX7VHD8wzZ7qXIszB5mh9NLPn4hopPXa2ogN0U-g_3JVbrnAQBrkj5k8eSspkW7Vz5OGgjekUvHK_w4SRJUBhRwSHbvXhi4nYE"/>
+<span class="text-label-md font-semibold">Admin Panel</span>
+</div>
+</div>
+</div>
+</header>
+<div class="p-gutter-desktop max-w-7xl mx-auto space-y-gutter-desktop">
+<!-- KPI Header -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-white border border-border-subtle p-6 rounded-xl shadow-sm hover:border-secondary transition-colors group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary-fixed text-primary rounded-lg">
+<span class="material-symbols-outlined">add_card</span>
+</div>
+<span class="text-rebate-success text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span> +12%
+                        </span>
+</div>
+<p class="text-label-md text-text-muted uppercase tracking-wider">Total Recharge (Today)</p>
+<h3 class="text-metric-xl font-metric-xl text-primary mt-1">￥45,000</h3>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-white border border-border-subtle p-6 rounded-xl shadow-sm hover:border-secondary transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-secondary-fixed text-secondary rounded-lg">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<span class="text-rebate-success text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span> +5.4%
+                        </span>
+</div>
+<p class="text-label-md text-text-muted uppercase tracking-wider">Rebate Payout (Today)</p>
+<h3 class="text-metric-xl font-metric-xl text-primary mt-1">￥6,750</h3>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-white border border-border-subtle p-6 rounded-xl shadow-sm hover:border-secondary transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-tertiary-fixed text-tertiary rounded-lg">
+<span class="material-symbols-outlined">pending_actions</span>
+</div>
+<span class="text-error-destructive text-label-sm flex items-center gap-1">
+                            High Priority
+                        </span>
+</div>
+<p class="text-label-md text-text-muted uppercase tracking-wider">Pending Withdrawals</p>
+<h3 class="text-metric-xl font-metric-xl text-primary mt-1">12</h3>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-white border border-border-subtle p-6 rounded-xl shadow-sm hover:border-secondary transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-surface-container-highest text-on-surface rounded-lg">
+<span class="material-symbols-outlined">person_add</span>
+</div>
+<span class="text-rebate-success text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span> +48
+                        </span>
+</div>
+<p class="text-label-md text-text-muted uppercase tracking-wider">New Users (Today)</p>
+<h3 class="text-metric-xl font-metric-xl text-primary mt-1">156</h3>
+</div>
+</div>
+<!-- Analytics & Feed Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop">
+<!-- Main Comparison Chart -->
+<div class="lg:col-span-8 bg-surface-white border border-border-subtle rounded-xl p-6 shadow-sm">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h4 class="text-headline-sm font-headline-md text-primary">Performance Trends</h4>
+<p class="text-label-sm text-text-muted">Recharge vs Rebate Payout (Last 30 Days)</p>
+</div>
+<select class="bg-surface-container border-none text-label-sm rounded-lg focus:ring-secondary cursor-pointer">
+<option>Last 30 Days</option>
+<option>Last 3 Months</option>
+</select>
+</div>
+<div class="relative h-64 w-full flex items-end gap-2 group/chart">
+<!-- Simulated Chart Grid -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-10">
+<div class="border-b border-on-surface w-full"></div>
+<div class="border-b border-on-surface w-full"></div>
+<div class="border-b border-on-surface w-full"></div>
+<div class="border-b border-on-surface w-full"></div>
+</div>
+<!-- Bars (Visual representation) -->
+<div class="flex-1 flex flex-col justify-end gap-1 h-full relative">
+<div class="w-full bg-primary/20 rounded-t-sm" style="height: 45%;"></div>
+<div class="w-full bg-secondary rounded-t-sm" style="height: 15%;"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-primary/20 rounded-t-sm" style="height: 65%;"></div>
+<div class="w-full bg-secondary rounded-t-sm" style="height: 25%;"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-primary/20 rounded-t-sm" style="height: 55%;"></div>
+<div class="w-full bg-secondary rounded-t-sm" style="height: 20%;"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-primary/20 rounded-t-sm" style="height: 85%;"></div>
+<div class="w-full bg-secondary rounded-t-sm" style="height: 35%;"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-primary/20 rounded-t-sm" style="height: 40%;"></div>
+<div class="w-full bg-secondary rounded-t-sm" style="height: 12%;"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-primary/20 rounded-t-sm" style="height: 70%;"></div>
+<div class="w-full bg-secondary rounded-t-sm" style="height: 28%;"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-primary/20 rounded-t-sm" style="height: 95%;"></div>
+<div class="w-full bg-secondary rounded-t-sm" style="height: 40%;"></div>
+</div>
+</div>
+<div class="mt-6 flex gap-6">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 bg-primary/20 rounded-full"></div>
+<span class="text-label-sm text-text-muted">Total Recharge</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 bg-secondary rounded-full"></div>
+<span class="text-label-sm text-text-muted">Rebate Payout</span>
+</div>
+</div>
+</div>
+<!-- Distribution Pie Card -->
+<div class="lg:col-span-4 bg-surface-white border border-border-subtle rounded-xl p-6 shadow-sm">
+<h4 class="text-headline-sm font-headline-md text-primary mb-6">Rebate Distribution</h4>
+<div class="relative w-48 h-48 mx-auto flex items-center justify-center">
+<!-- Custom CSS for pie effect -->
+<div class="absolute inset-0 rounded-full border-[18px] border-surface-container-low"></div>
+<div class="absolute inset-0 rounded-full border-[18px] border-secondary border-t-transparent border-r-transparent rotate-[45deg]"></div>
+<div class="text-center">
+<span class="text-metric-xl text-primary leading-none">70%</span>
+<p class="text-label-sm text-text-muted">Milestone</p>
+</div>
+</div>
+<div class="mt-8 space-y-3">
+<div class="flex justify-between items-center px-2 py-1.5 rounded bg-surface-container-low">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="text-label-md">Milestone</span>
+</div>
+<span class="text-label-md font-bold">70%</span>
+</div>
+<div class="flex justify-between items-center px-2 py-1.5 rounded">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+<span class="text-label-md">Multi-level</span>
+</div>
+<span class="text-label-md font-bold">30%</span>
+</div>
+</div>
+</div>
+<!-- Real-time Feed -->
+<div class="lg:col-span-12 bg-surface-white border border-border-subtle rounded-xl overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-border-subtle bg-surface-container-lowest flex justify-between items-center">
+<h4 class="text-headline-sm font-headline-md text-primary">System Activity</h4>
+<span class="flex items-center gap-2 text-label-sm text-rebate-success">
+<span class="w-2 h-2 bg-rebate-success rounded-full animate-pulse"></span>
+                            Live Updates
+                        </span>
+</div>
+<div class="divide-y divide-border-subtle">
+<!-- Feed Item 1 -->
+<div class="px-6 py-4 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-default">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">upload</span>
+</div>
+<div>
+<p class="text-label-md font-bold text-primary">Recharge Confirmed</p>
+<p class="text-label-sm text-text-muted">User ID: #88291 • Just now</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-label-md font-bold text-primary">+￥12,500.00</p>
+<span class="px-2 py-0.5 bg-rebate-success/10 text-rebate-success text-[10px] font-bold rounded uppercase">Processed</span>
+</div>
+</div>
+<!-- Feed Item 2 -->
+<div class="px-6 py-4 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-default">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center text-on-error-container">
+<span class="material-symbols-outlined">account_balance</span>
+</div>
+<div>
+<p class="text-label-md font-bold text-primary">Withdrawal Requested</p>
+<p class="text-label-sm text-text-muted">User ID: #10294 • 5 mins ago</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-label-md font-bold text-error">-￥4,200.00</p>
+<span class="px-2 py-0.5 bg-error-container/20 text-on-error-container text-[10px] font-bold rounded uppercase">Awaiting Approval</span>
+</div>
+</div>
+<!-- Feed Item 3 -->
+<div class="px-6 py-4 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-default">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">redeem</span>
+</div>
+<div>
+<p class="text-label-md font-bold text-primary">Milestone Rebate Triggered</p>
+<p class="text-label-sm text-text-muted">User ID: #44012 • 12 mins ago</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-label-md font-bold text-rebate-success">+￥850.00</p>
+<span class="px-2 py-0.5 bg-secondary-fixed/30 text-secondary text-[10px] font-bold rounded uppercase">Automated</span>
+</div>
+</div>
+<!-- Feed Item 4 -->
+<div class="px-6 py-4 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-default">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">upload</span>
+</div>
+<div>
+<p class="text-label-md font-bold text-primary">Large Recharge Detected</p>
+<p class="text-label-sm text-text-muted">User ID: #00234 • 24 mins ago</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-label-md font-bold text-primary">+￥25,000.00</p>
+<span class="px-2 py-0.5 bg-rebate-success/10 text-rebate-success text-[10px] font-bold rounded uppercase">Processed</span>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-lowest text-center">
+<button class="text-label-md text-secondary font-bold hover:underline">View All Transactions</button>
+</div>
+</div>
+</div>
+<!-- Dashboard Footer/Context -->
+<footer class="mt-8 py-6 text-center border-t border-border-subtle">
+<p class="text-label-sm text-text-muted">© 2024 Sub2Rebate Financial Technology. All rights reserved. System V2.4.1</p>
+</footer>
+</div>
+</main>
+<script>
+        // Micro-interaction for hover effects on bars
+        const bars = document.querySelectorAll('.flex-1.flex-col > div');
+        bars.forEach(bar => {
+            bar.addEventListener('mouseenter', () => {
+                bar.style.filter = 'brightness(1.1)';
+                bar.style.transition = 'filter 0.2s';
+            });
+            bar.addEventListener('mouseleave', () => {
+                bar.style.filter = 'brightness(1)';
+            });
+        });
+
+        // Sticky header opacity on scroll
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 10) {
+                header.classList.add('shadow-sm');
+            } else {
+                header.classList.remove('shadow-sm');
+            }
+        });
+    </script>
+</body></html>

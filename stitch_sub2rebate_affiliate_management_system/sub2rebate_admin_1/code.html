@@ -1,0 +1,427 @@
+<!DOCTYPE html><html class="light" lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Sub2Rebate - 配置中心</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "rebate-success": "#10B981",
+                    "error-container": "#ffdad6",
+                    "inverse-surface": "#2d3133",
+                    "on-background": "#191c1e",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#f7f9fb",
+                    "on-surface": "#191c1e",
+                    "surface-container-low": "#f2f4f6",
+                    "surface-container-high": "#e6e8ea",
+                    "on-tertiary-fixed": "#002113",
+                    "secondary-fixed": "#e1e0ff",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#6ffbbe",
+                    "outline-variant": "#c6c6cd",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "outline": "#76777d",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-tertiary-container": "#009668",
+                    "surface-container": "#eceef0",
+                    "on-secondary-fixed": "#07006c",
+                    "tertiary": "#000000",
+                    "surface-container-highest": "#e0e3e5",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#c0c1ff",
+                    "surface-tint": "#565e74",
+                    "text-muted": "#64748B",
+                    "secondary-container": "#6063ee",
+                    "surface": "#f7f9fb",
+                    "primary-fixed": "#dae2fd",
+                    "on-primary-container": "#7c839b",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "on-tertiary": "#ffffff",
+                    "error-destructive": "#EF4444",
+                    "background": "#f7f9fb",
+                    "on-surface-variant": "#45464d",
+                    "primary-container": "#131b2e",
+                    "border-subtle": "#E2E8F0",
+                    "on-secondary-fixed-variant": "#2f2ebe",
+                    "tertiary-container": "#002113",
+                    "primary-fixed-dim": "#bec6e0",
+                    "inverse-primary": "#bec6e0",
+                    "on-secondary-container": "#fffbff",
+                    "primary": "#000000",
+                    "on-error-container": "#93000a",
+                    "surface-white": "#FFFFFF",
+                    "surface-dim": "#d8dadc",
+                    "on-primary-fixed": "#131b2e",
+                    "secondary": "#4648d4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.8px",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "gutter-desktop": "24px",
+                    "stack-md": "16px",
+                    "gutter-mobile": "16px",
+                    "container-padding": "24px",
+                    "stack-sm": "8px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Inter", "sans-serif"],
+                    "headline-lg": ["Inter", "sans-serif"],
+                    "label-sm": ["Inter", "sans-serif"],
+                    "body-lg": ["Inter", "sans-serif"],
+                    "metric-xl": ["Inter", "sans-serif"],
+                    "label-md": ["Inter", "sans-serif"],
+                    "body-md": ["Inter", "sans-serif"],
+                    "headline-md": ["Inter", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 3px; }
+        
+        .tab-active {
+            @apply bg-surface-container-low text-secondary font-bold border-r-4 border-secondary;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-white border-r border-border-subtle flex flex-col py-6 px-4 z-50">
+<div class="mb-8 px-2">
+<h1 class="text-headline-md font-headline-md font-bold text-primary">Sub2Rebate</h1>
+<p class="text-label-sm font-label-sm text-text-muted">Fintech Dashboard</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-label-md font-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary">home</span>
+                Home
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-label-md font-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary">campaign</span>
+                Promotion
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-label-md font-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary">payments</span>
+                Withdraw
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary font-bold border-r-4 border-secondary bg-surface-container-low rounded-r-none -mr-4 transition-all duration-200 scale-[0.98]" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto space-y-1 border-t border-border-subtle pt-4">
+<a class="flex items-center gap-3 px-3 py-2 text-label-md font-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-label-md font-label-md text-text-muted hover:bg-surface-container-low transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Sign Out
+            </a>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-64 h-16 bg-surface-white/80 backdrop-blur-md border-b border-border-subtle flex justify-between items-center px-gutter-desktop z-40">
+<div class="flex items-center gap-8">
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary">配置中心</h2>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-label-sm font-label-sm text-primary font-bold border-b-2 border-primary py-5" href="#">Overview</a>
+<a class="text-label-sm font-label-sm text-text-muted hover:text-primary transition-colors" href="#">Analytics</a>
+<a class="text-label-sm font-label-sm text-text-muted hover:text-primary transition-colors" href="#">Security</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-label-sm font-label-sm text-text-muted hover:text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="bg-primary text-on-primary px-4 py-1.5 rounded-lg text-label-sm font-label-sm hover:opacity-80 transition-all">
+                保存更改
+            </button>
+<div class="h-8 w-8 rounded-full bg-surface-container overflow-hidden border border-border-subtle">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA9yYq7N3-8W_LgxNHGMmNh6APfFGTWK29O_PQ-pB63Byku3RMJ99YpSEXzXIqtlXmxhqF03tkqG5kHhF-0BMRn_HzWebjGUfZXBESGnJc5uugA3hJ4zzNJccy7lnqLa-ET7Kdi5c37qW9Ka-CW8uqvf_dj_WfwOZRGQpJsynHxKXY88rKKYwqv6gNuIZDYVTOlL0tIFF1QUwNPf46H-35jgoPco7aroooJ3-pdfzKqyLFNeEcjygOk3v8R4_zv_z4Uw7zM4VbH_s">
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-64 mt-16 p-8 max-w-[1440px] mx-auto min-h-screen">
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- Sidebar Navigation (Local) -->
+<aside class="w-full lg:w-64 flex-shrink-0">
+<nav class="flex flex-col gap-1 sticky top-24">
+<button class="flex items-center justify-between px-4 py-3 text-label-md font-medium text-secondary bg-white border border-border-subtle rounded-xl shadow-sm hover:border-secondary transition-all text-left" id="tab-milestone" onclick="switchTab('milestone')">
+                        里程碑配置
+                        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+<button class="flex items-center justify-between px-4 py-3 text-label-md font-medium text-text-muted bg-white border border-border-subtle rounded-xl shadow-sm hover:border-secondary transition-all text-left mt-2" id="tab-rebate" onclick="switchTab('rebate')">
+                        多级返利配置
+                        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+<button class="flex items-center justify-between px-4 py-3 text-label-md font-medium text-text-muted bg-white border border-border-subtle rounded-xl shadow-sm hover:border-secondary transition-all text-left mt-2" id="tab-withdraw" onclick="switchTab('withdraw')">
+                        提现配置
+                        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+<button class="flex items-center justify-between px-4 py-3 text-label-md font-medium text-text-muted bg-white border border-border-subtle rounded-xl shadow-sm hover:border-secondary transition-all text-left mt-2" id="tab-risk" onclick="switchTab('risk')">
+                        风控配置
+                        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+<div class="mt-8 p-4 bg-surface-container-lowest border border-border-subtle rounded-xl border-dashed">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-text-muted text-[16px]">history</span>
+<span class="text-label-sm font-label-sm text-text-muted">最后修改</span>
+</div>
+<p class="text-[12px] text-text-muted">管理员: admin_01</p>
+<p class="text-[12px] text-text-muted">时间: 2023-11-24 14:20</p>
+</div>
+</nav>
+</aside>
+<!-- Configuration Panels -->
+<div class="flex-1 space-y-8 pb-20">
+<!-- Milestone Section -->
+<section class="bg-surface-white border border-border-subtle rounded-xl overflow-hidden shadow-sm" id="pane-milestone">
+<div class="p-6 border-b border-border-subtle bg-surface-container-lowest">
+<h3 class="text-headline-md font-headline-md text-primary">里程碑配置</h3>
+<p class="text-body-md text-text-muted">设置用户充值奖励触发规则</p>
+</div>
+<div class="p-6 space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-label-md font-label-md text-primary">里程碑额度 (CNY)</label>
+<div class="relative">
+<input class="w-full pl-4 pr-12 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md" type="number" value="100">
+<span class="absolute right-4 top-2.5 text-text-muted text-label-sm">每额度</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-label-md font-label-md text-primary">奖励金额 (CNY)</label>
+<div class="relative">
+<input class="w-full pl-4 pr-12 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md" type="text" value="5.00">
+<span class="absolute right-4 top-2.5 text-text-muted text-label-sm">元</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-label-md font-label-md text-primary">奖励次数限制</label>
+<input class="w-full px-4 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md" type="number" value="3">
+</div>
+</div>
+<div class="flex items-start gap-3 p-4 bg-primary-container/5 rounded-lg border border-primary-container/10">
+<span class="material-symbols-outlined text-secondary text-[20px]">info</span>
+<p class="text-label-md text-on-primary-container">提示：用户每充值满额度将触发一次奖励给其直接上级。例如设置为100元，用户充值100元，上级获得5元。</p>
+</div>
+</div>
+</section>
+<!-- Multi-level Rebate Section -->
+<section class="bg-surface-white border border-border-subtle rounded-xl overflow-hidden shadow-sm" id="pane-rebate">
+<div class="p-6 border-b border-border-subtle bg-surface-container-lowest flex justify-between items-center">
+<div>
+<h3 class="text-headline-md font-headline-md text-primary">多级返利配置</h3>
+<p class="text-body-md text-text-muted">定义返利池比例及层级分发权重</p>
+</div>
+<span class="px-3 py-1 bg-rebate-success/10 text-rebate-success text-label-sm rounded-full font-bold">已启用</span>
+</div>
+<div class="p-6 space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-4">
+<div class="space-y-2">
+<label class="text-label-md font-label-md text-primary">总返利池比例</label>
+<div class="relative">
+<input class="w-full px-4 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md" type="number" value="15">
+<span class="absolute right-4 top-2.5 text-text-muted text-label-sm">%</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-label-md font-label-md text-primary">最大返利深度</label>
+<select class="w-full px-4 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md bg-white">
+<option>3 层</option>
+<option selected="">5 层</option>
+<option>10 层</option>
+</select>
+</div>
+</div>
+<div class="space-y-4">
+<label class="text-label-md font-label-md text-primary">衰减系数 (Decay Coefficient)</label>
+<div class="space-y-6">
+  <div class="space-y-2">
+    <div class="relative">
+      <input type="number" step="0.1" value="0.5" class="w-full px-4 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md" placeholder="0.5">
+      <span class="absolute right-4 top-2.5 text-text-muted text-label-sm">系数</span>
+    </div>
+    <p class="text-[12px] text-text-muted italic">每增加一级，返利比例将按此系数衰减。</p>
+  </div>
+  
+  <div class="p-4 bg-surface-container-low rounded-lg border border-border-subtle">
+    <p class="text-label-sm font-bold text-primary mb-3">计算结果示例 (基于 15% 总池):</p>
+    <div class="grid grid-cols-5 gap-2">
+      <div class="text-center">
+        <p class="text-[10px] text-text-muted">L1</p>
+        <p class="text-label-sm font-medium">7.50%</p>
+      </div>
+      <div class="text-center">
+        <p class="text-[10px] text-text-muted">L2</p>
+        <p class="text-label-sm font-medium">3.75%</p>
+      </div>
+      <div class="text-center">
+        <p class="text-[10px] text-text-muted">L3</p>
+        <p class="text-label-sm font-medium">1.88%</p>
+      </div>
+      <div class="text-center">
+        <p class="text-[10px] text-text-muted">L4</p>
+        <p class="text-label-sm font-medium">0.94%</p>
+      </div>
+      <div class="text-center">
+        <p class="text-[10px] text-text-muted">L5</p>
+        <p class="text-label-sm font-medium">0.47%</p>
+      </div>
+    </div>
+    <div class="mt-3 pt-2 border-t border-border-subtle flex justify-between items-center">
+      <span class="text-[10px] text-text-muted">当前比例总和:</span>
+      <span class="text-label-sm font-bold text-secondary">14.54%</span>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Withdraw Config -->
+<section class="bg-surface-white border border-border-subtle rounded-xl overflow-hidden shadow-sm" id="pane-withdraw">
+<div class="p-6 border-b border-border-subtle bg-surface-container-lowest">
+<h3 class="text-headline-md font-headline-md text-primary">提现配置</h3>
+<p class="text-body-md text-text-muted">控制资金流出安全与频率</p>
+</div>
+<div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-label-md font-label-md text-primary">单次最低提现额</label>
+<div class="relative">
+<input class="w-full px-4 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md" type="text" value="100.00">
+<span class="absolute right-4 top-2.5 text-text-muted text-label-sm">CNY</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-label-md font-label-md text-primary">提现冷却时间 (小时)</label>
+<input class="w-full px-4 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md" type="number" value="24">
+</div>
+</div>
+</section>
+<!-- Risk Control Section -->
+<section class="bg-surface-white border border-border-subtle rounded-xl overflow-hidden shadow-sm" id="pane-risk">
+<div class="p-6 border-b border-border-subtle bg-surface-container-lowest">
+<h3 class="text-headline-md font-headline-md text-primary">风控配置</h3>
+<p class="text-body-md text-text-muted">系统自动化反欺诈与账户保护</p>
+</div>
+<div class="p-6 space-y-6">
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error-destructive" style="font-variation-settings: &quot;FILL&quot; 1;">security</span>
+<div>
+<p class="text-label-md font-bold text-primary">全局黑名单总开关</p>
+<p class="text-label-sm text-text-muted">开启后将应用实时拦截逻辑</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<div class="space-y-2">
+<label class="text-label-md font-label-md text-primary">自动冻结阈值 (异常操作次数/小时)</label>
+<input class="w-full px-4 py-2.5 rounded-lg border-border-subtle focus:ring-2 focus:ring-secondary focus:border-secondary text-body-md" type="number" value="50">
+<p class="text-[12px] text-text-muted italic">* 达到阈值后账号将进入锁定状态，需人工审核解除。</p>
+</div>
+</div>
+</section>
+<!-- Audit Log Preview (UI Hint) -->
+<div class="p-4 flex items-center justify-between border border-border-subtle border-dashed rounded-lg bg-white">
+<div class="flex items-center gap-4">
+<div class="p-2 bg-secondary/10 rounded-full">
+<span class="material-symbols-outlined text-secondary text-[20px]">verified_user</span>
+</div>
+<span class="text-label-md text-text-muted">所有配置更改将自动记录在审计日志中，以供回溯。</span>
+</div>
+<a class="text-secondary text-label-sm font-bold hover:underline" href="#">查看完整日志</a>
+</div>
+</div>
+</div>
+</main>
+<script>
+        function switchTab(tabId) {
+            // Reset all buttons
+            const tabs = ['milestone', 'rebate', 'withdraw', 'risk'];
+            tabs.forEach(id => {
+                const btn = document.getElementById(`tab-${id}`);
+                btn.classList.remove('text-secondary', 'bg-white', 'border-secondary', 'font-bold');
+                btn.classList.add('text-text-muted');
+                
+                const pane = document.getElementById(`pane-${id}`);
+                // Scroll into view logic could be added here
+            });
+
+            // Set active state
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('text-secondary', 'font-bold', 'border-secondary');
+            activeBtn.classList.remove('text-text-muted');
+
+            // Scroll target pane into view smoothly
+            const targetPane = document.getElementById(`pane-${tabId}`);
+            window.scrollTo({
+                top: targetPane.offsetTop - 100,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Initial highlight logic
+        window.addEventListener('scroll', () => {
+            const sections = ['milestone', 'rebate', 'withdraw', 'risk'];
+            let current = '';
+            sections.forEach(section => {
+                const element = document.getElementById(`pane-${section}`);
+                const rect = element.getBoundingClientRect();
+                if (rect.top <= 150) {
+                    current = section;
+                }
+            });
+
+            if (current) {
+                sections.forEach(id => {
+                    const btn = document.getElementById(`tab-${id}`);
+                    if (id === current) {
+                        btn.classList.add('border-secondary', 'text-secondary', 'font-bold');
+                        btn.classList.remove('text-text-muted');
+                    } else {
+                        btn.classList.remove('border-secondary', 'text-secondary', 'font-bold');
+                        btn.classList.add('text-text-muted');
+                    }
+                });
+            }
+        });
+    </script>
+
+
+</body></html>
