@@ -2,6 +2,32 @@
 
 > 记录项目每次重要开发、文档调整和决策变化。最新记录放在最上面。
 
+## 2026-06-16：沉淀 Sub2API 删号与邀请树专项问题清单
+
+目标：
+
+- 基于当前真实代码梳理 Sub2API 用户删号、邀请树层级、节点统计和返利链路的风险。
+- 明确“上游删号后本地节点是否保留、节点数怎么统计、返利怎么处理”的业务建议。
+- 形成可直接讨论的正式问题清单文档。
+
+完成：
+
+- 新增 `6/16 问题清单/Sub2API删号与邀请树问题清单-2026-06-16.md`。
+- 结合 `InviteService`、`MilestoneService`、`DecayRebateService`、`PromotionController`、`DashboardController` 和相关迁移，确认当前系统的邀请树事实源是本地 `users + referral_paths`，不是 Sub2API 外部账号生命周期。
+- 识别当前主要风险：`referral_paths.parent_user_id nullOnDelete` 与 `path/depth` 不联动、账务历史表对 `users` 使用 `cascadeOnDelete`、登录态只校验本地状态、返利计算未过滤“上游已删但本地残留”的上级节点。
+- 给出建议：本地用户节点禁止硬删，改为 tombstone / `upstream_deleted` 生命周期；节点统计拆分为结构节点数、有效节点数、可返利上级数；里程碑和衰减返利分开定义删号后的发放策略。
+- 已补充测试验证计划，覆盖自动化测试、手工联调、回归口径和阶段性验收标准，便于后续按计划落地。
+
+影响模块：
+
+- Invite
+- Rebate
+- Milestone
+- User Center
+- Admin
+- Sub2API Integration
+- 项目文档
+
 ## 2026-06-15：提交前进度快照
 
 目标：
