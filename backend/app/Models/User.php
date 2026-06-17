@@ -24,8 +24,17 @@ class User extends Authenticatable implements FilamentUser, HasName
         'email',
         'role',
         'status',
+        'rebate_status',
         'sub2api_aff_code',
         'sub2api_inviter_id',
+        'last_recharge_at',
+        'last_balance_decreased_at',
+        'last_invited_at',
+        'rebate_disabled_at',
+        'rebate_disabled_reason',
+        'last_sub2api_balance',
+        'last_sub2api_total_recharged',
+        'last_balance_checked_at',
     ];
 
     protected $hidden = [
@@ -38,6 +47,13 @@ class User extends Authenticatable implements FilamentUser, HasName
         return [
             'id' => 'int',
             'sub2api_inviter_id' => 'int',
+            'last_recharge_at' => 'datetime',
+            'last_balance_decreased_at' => 'datetime',
+            'last_invited_at' => 'datetime',
+            'rebate_disabled_at' => 'datetime',
+            'last_sub2api_balance' => 'decimal:6',
+            'last_sub2api_total_recharged' => 'decimal:6',
+            'last_balance_checked_at' => 'datetime',
         ];
     }
 

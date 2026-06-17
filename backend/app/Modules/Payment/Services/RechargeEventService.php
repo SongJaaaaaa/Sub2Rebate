@@ -6,12 +6,16 @@ use App\Models\User;
 use App\Modules\Config\Services\ConfigService;
 use App\Modules\Payment\Models\PaymentRecord;
 use App\Modules\Payment\Models\RebateEvent;
+use App\Modules\Rebate\Services\RebateEligibilityService;
 use App\Support\ApiError;
 use Illuminate\Support\Facades\DB;
 
 class RechargeEventService
 {
-    public function __construct(private readonly ConfigService $configs)
+    public function __construct(
+        private readonly ConfigService $configs,
+        private readonly RebateEligibilityService $eligibility,
+    )
     {
     }
 
@@ -151,6 +155,8 @@ class RechargeEventService
                 'remark' => $data['remark'] ?? null,
                 'occurred_at' => $data['occurred_at'] ?? now(),
             ]);
+
+            $this->eligibility->markRecharge($user->refresh(), $event->occurred_at);
 
             return [
                 'ok' => true,

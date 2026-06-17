@@ -9,6 +9,7 @@ use App\Modules\Invite\Services\InviteService;
 use App\Modules\Payment\Models\RebateEvent;
 use App\Modules\Rebate\Models\RebateRecord;
 use App\Modules\Rebate\Models\UserRebateProgress;
+use App\Modules\Rebate\Services\RebateEligibilityService;
 use App\Modules\Rebate\Services\RebateBalanceService;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +19,7 @@ class MilestoneService
         private readonly ConfigService $configs,
         private readonly InviteService $invites,
         private readonly RebateBalanceService $balances,
+        private readonly RebateEligibilityService $eligibility,
         private readonly AuditLogService $audits,
     ) {
     }
@@ -82,58 +84,65 @@ class MilestoneService
             $canTrigger = max(0, min($afterReached, $maxTimes) - max((int) $progress->milestone_times, $beforeReached));
 
             $records = [];
-            $parentId = $this->directParentId($payer);
+            $parent = $this->directParent($payer);
+            $parentId = $parent instanceof User ? (int) $parent->id : null;
 
             $awardedTimes = 0;
+            $consumedTimes = 0;
 
             if ($canTrigger > 0 && $parentId !== null) {
-                $totalReward = $rewardAmount * $canTrigger;
-                $record = RebateRecord::query()->firstOrCreate(
-                    [
-                        'event_id' => $event->id,
-                        'receiver_user_id' => $parentId,
-                        'level' => 1,
-                        'type' => RebateRecord::TYPE_MILESTONE,
-                    ],
-                    [
-                        'payer_user_id' => $payer->id,
-                        'source_amount' => $event->standard_amount,
-                        'rebate_amount' => $this->money($totalReward),
-                        'status' => 'confirmed',
-                        'config_snapshot' => [
-                            'milestone.amount' => $this->money($amount),
-                            'milestone.reward_amount' => $this->money($rewardAmount),
-                            'milestone.max_times' => $maxTimes,
-                            'milestone.triggered_times' => $canTrigger,
-                        ],
-                        'remark' => '里程碑奖励',
-                    ]
-                );
+                $consumedTimes = $canTrigger;
 
-                if ($record->wasRecentlyCreated) {
-                    $this->balances->addAvailable($parentId, $totalReward);
-                    $this->audits->record('rebate', 'rebate.milestone_granted', [
-                        'actor_user_id' => null,
-                        'target_user_id' => $parentId,
-                        'subject_type' => RebateRecord::class,
-                        'subject_id' => $record->id,
-                        'after_values' => [
+                if ($this->eligibility->eligible($parent)) {
+                    $totalReward = $rewardAmount * $canTrigger;
+                    $record = RebateRecord::query()->firstOrCreate(
+                        [
                             'event_id' => $event->id,
-                            'payer_user_id' => $payer->id,
                             'receiver_user_id' => $parentId,
-                            'amount' => $this->money($totalReward),
-                            'triggered_times' => $canTrigger,
+                            'level' => 1,
+                            'type' => RebateRecord::TYPE_MILESTONE,
                         ],
-                        'remark' => '里程碑奖励发放',
-                    ]);
-                }
+                        [
+                            'payer_user_id' => $payer->id,
+                            'source_amount' => $event->standard_amount,
+                            'rebate_amount' => $this->money($totalReward),
+                            'status' => 'confirmed',
+                            'config_snapshot' => [
+                                'milestone.amount' => $this->money($amount),
+                                'milestone.reward_amount' => $this->money($rewardAmount),
+                                'milestone.max_times' => $maxTimes,
+                                'milestone.triggered_times' => $canTrigger,
+                                'receiver.rebate_status' => (string) ($parent->rebate_status ?: RebateEligibilityService::STATUS_ELIGIBLE),
+                            ],
+                            'remark' => '里程碑奖励',
+                        ]
+                    );
 
-                $records[] = $record;
-                $awardedTimes = $canTrigger;
+                    if ($record->wasRecentlyCreated) {
+                        $this->balances->addAvailable($parentId, $totalReward);
+                        $this->audits->record('rebate', 'rebate.milestone_granted', [
+                            'actor_user_id' => null,
+                            'target_user_id' => $parentId,
+                            'subject_type' => RebateRecord::class,
+                            'subject_id' => $record->id,
+                            'after_values' => [
+                                'event_id' => $event->id,
+                                'payer_user_id' => $payer->id,
+                                'receiver_user_id' => $parentId,
+                                'amount' => $this->money($totalReward),
+                                'triggered_times' => $canTrigger,
+                            ],
+                            'remark' => '里程碑奖励发放',
+                        ]);
+                    }
+
+                    $records[] = $record;
+                    $awardedTimes = $canTrigger;
+                }
             }
 
             $progress->total_recharge_amount = $this->money($afterAmount);
-            $progress->milestone_times = min($maxTimes, (int) $progress->milestone_times + $awardedTimes);
+            $progress->milestone_times = min($maxTimes, (int) $progress->milestone_times + $consumedTimes);
             $progress->last_event_id = $event->id;
             $progress->save();
 
@@ -146,11 +155,12 @@ class MilestoneService
         });
     }
 
-    private function directParentId(User $payer): ?int
+    private function directParent(User $payer): ?User
     {
         $ids = $this->invites->ancestorIds($payer);
+        $id = $ids[0] ?? null;
 
-        return $ids[0] ?? null;
+        return $id !== null ? User::query()->find($id) : null;
     }
 
     private function configFloat(string $key, float $default): float

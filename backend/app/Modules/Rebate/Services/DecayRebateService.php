@@ -67,8 +67,8 @@ class DecayRebateService
             ];
         }
 
-        $ancestorIds = $this->invites->ancestorIds($payer);
-        if ($ancestorIds === []) {
+        $ancestors = $this->invites->rebateAncestors($payer);
+        if ($ancestors === []) {
             $event->error_message = '没有上级，未发放衰减返利';
             $event->save();
 
@@ -81,7 +81,13 @@ class DecayRebateService
             ];
         }
 
-        $custom = $this->customItems($payer, $ancestorIds, $normalAmount);
+        $mode = $this->inactiveNodeMode();
+        $calcAncestors = $mode === 'exclude_recalculate'
+            ? array_values(array_filter($ancestors, fn (array $row): bool => $this->isEligible($row)))
+            : $ancestors;
+        $receiverIds = array_map(fn (array $row): int => (int) $row['user_id'], $calcAncestors);
+
+        $custom = $this->customItems($payer, $receiverIds, $normalAmount);
         if ($custom !== null) {
             $pool = $custom['pool'];
             $items = $custom['items'];
@@ -90,13 +96,29 @@ class DecayRebateService
             $poolRatio = $this->configFloat('rebate.pool_ratio', 0.15);
             $decay = $this->configFloat('rebate.decay_factor', 0.4);
             $pool = $normalAmount * $poolRatio;
-            $items = $this->calculator->calculate($pool, $ancestorIds, $decay);
+            $items = $this->calculator->calculate($pool, $receiverIds, $decay);
             $snapshot = [
                 'rebate.pool_ratio' => $this->money($poolRatio),
                 'rebate.decay_factor' => $this->money($decay),
                 'rebate.pool_amount' => $this->money($pool),
             ];
         }
+
+        if ($mode === 'platform') {
+            $eligibleIds = array_flip(array_map(
+                fn (array $row): int => (int) $row['user_id'],
+                array_values(array_filter($ancestors, fn (array $row): bool => $this->isEligible($row)))
+            ));
+            $items = array_values(array_filter($items, fn (array $item): bool => isset($eligibleIds[(int) $item['user_id']])));
+        }
+
+        $snapshot += [
+            'rebate.inactive_node_mode' => $mode,
+            'rebate.skipped_disabled_user_ids' => array_values(array_map(
+                fn (array $row): int => (int) $row['user_id'],
+                array_filter($ancestors, fn (array $row): bool => ! $this->isEligible($row))
+            )),
+        ];
 
         return DB::transaction(function () use ($event, $payer, $items, $pool, $snapshot, $normalAmount): array {
             $records = [];
@@ -171,7 +193,7 @@ class DecayRebateService
         return max(0.0, $after - $threshold) - max(0.0, $before - $threshold);
     }
 
-    private function customItems(User $payer, array $ancestorIds, float $normalAmount): ?array
+    private function customItems(User $payer, array $receiverIds, float $normalAmount): ?array
     {
         $item = ConfigItem::query()->where('key', 'rebate.user_override.'.$payer->id)->first();
         if (! $item instanceof ConfigItem || ! is_array($item->value)) {
@@ -203,7 +225,7 @@ class DecayRebateService
         $rows = [];
         $pool = 0.0;
         $expected = 0.0;
-        foreach (array_values($ancestorIds) as $index => $userId) {
+        foreach (array_values($receiverIds) as $index => $userId) {
             $level = $index + 1;
             $rate = (float) ($rates[$level] ?? 0);
             if ($rate <= 0) {
@@ -253,6 +275,18 @@ class DecayRebateService
         $value = $this->configs->get($key, (string) $default);
 
         return is_numeric($value) ? (float) $value : $default;
+    }
+
+    private function inactiveNodeMode(): string
+    {
+        $mode = (string) $this->configs->get('rebate.inactive_node_mode', 'platform');
+
+        return in_array($mode, ['platform', 'exclude_recalculate'], true) ? $mode : 'platform';
+    }
+
+    private function isEligible(array $row): bool
+    {
+        return (string) ($row['rebate_status'] ?? RebateEligibilityService::STATUS_ELIGIBLE) === RebateEligibilityService::STATUS_ELIGIBLE;
     }
 
     private function amount(mixed $value): float

@@ -71,6 +71,15 @@ class DefaultConfig
                 'sort' => 70,
             ],
             [
+                'key' => 'rebate.inactive_node_mode',
+                'group' => 'rebate',
+                'name' => '失效节点返利处理方式',
+                'type' => 'string',
+                'value' => 'platform',
+                'tips' => 'platform 归平台；exclude_recalculate 排除失效节点后重算',
+                'sort' => 75,
+            ],
+            [
                 'key' => 'rebate.normalize',
                 'group' => 'rebate',
                 'name' => '归一化',
@@ -186,6 +195,24 @@ class DefaultConfig
                 'value' => true,
                 'tips' => '是否启用返利事件防重复发放检查',
                 'sort' => 150,
+            ],
+            [
+                'key' => 'risk.lie_flat_enabled',
+                'group' => 'risk',
+                'name' => '启用防躺平检测',
+                'type' => 'bool',
+                'value' => true,
+                'tips' => '连续无充值、余额无减少、无新增下级时，自动暂停返利资格',
+                'sort' => 160,
+            ],
+            [
+                'key' => 'risk.lie_flat_days',
+                'group' => 'risk',
+                'name' => '连续无活跃天数',
+                'type' => 'int',
+                'value' => 7,
+                'tips' => '防躺平检测的连续无活跃天数，默认 7 天',
+                'sort' => 170,
             ],
         ];
     }

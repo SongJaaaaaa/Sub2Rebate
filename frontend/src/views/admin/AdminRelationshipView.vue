@@ -119,6 +119,11 @@ const getStatusDot = (status: string) => {
   return 'bg-red-500'
 }
 
+const getRebateReason = (node: RelationshipNode) => {
+  if (node.rebateDisabledReason === 'lie_flat') return '防躺平：连续无活跃'
+  return node.rebateDisabledReason || '返利资格已失效'
+}
+
 const getChildCount = (node: RelationshipNode): number => {
   if (!node.children) return 0
   return node.children.length + node.children.reduce((sum, c) => sum + getChildCount(c), 0)
@@ -143,6 +148,7 @@ const TreeNode = defineComponent({
             class: [
               'relative min-w-[180px] cursor-pointer rounded-lg border-2 bg-white px-4 py-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md',
               getLevelBorder(node.level),
+              node.rebateStatus === 'disabled' ? 'opacity-60 grayscale' : '',
             ],
             onClick: () => onNodeClick(node),
           },
@@ -166,6 +172,9 @@ const TreeNode = defineComponent({
             h('div', { class: 'truncate text-sm font-bold text-[var(--sr-text)]' }, userName(node)),
             h('div', { class: 'mt-1 text-xs text-[var(--sr-muted)]' }, `ID: ${node.id}`),
             h('div', { class: 'mt-2 text-xs text-[var(--sr-muted)]' }, node.level),
+            node.rebateStatus === 'disabled'
+              ? h('div', { class: 'mt-1 text-xs font-semibold text-gray-500' }, '返利失效')
+              : null,
             h('div', { class: 'mt-1 text-xs font-semibold text-[var(--sr-secondary)]' }, money(node.totalRecharge)),
             h('div', { class: 'mt-1 text-xs text-[var(--sr-muted)]' }, `直邀 ${node.directReferrals} 人`),
           ],
@@ -251,6 +260,7 @@ onMounted(() => fetchTree())
       <span class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-green-500" />正常</span>
       <span class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-orange-500" />预警</span>
       <span class="flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-red-500" />封禁</span>
+      <span class="flex items-center gap-1 opacity-60 grayscale"><span class="h-2.5 w-2.5 rounded-full bg-gray-400" />返利失效</span>
       <span class="ml-4 text-[var(--sr-muted)]">操作：拖拽移动画布 · 滚轮缩放 · 点击节点查看详情 · 点击 +/- 展开收起</span>
     </div>
 
@@ -318,6 +328,16 @@ onMounted(() => fetchTree())
               {{ selectedNode.status === 'active' ? '正常' : selectedNode.status === 'warning' ? '预警' : '封禁' }}
             </div>
           </div>
+          <div class="rounded-lg border border-[var(--sr-border)] p-3 text-center">
+            <div class="text-xs text-[var(--sr-muted)]">返利资格</div>
+            <div class="mt-1 text-lg font-bold" :class="selectedNode.rebateStatus === 'disabled' ? 'text-gray-500' : 'text-green-600'">
+              {{ selectedNode.rebateStatus === 'disabled' ? '已失效' : '正常' }}
+            </div>
+          </div>
+        </div>
+
+        <div v-if="selectedNode.rebateStatus === 'disabled'" class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
+          {{ getRebateReason(selectedNode) }}
         </div>
 
         <div class="mt-4 flex justify-end gap-2">
