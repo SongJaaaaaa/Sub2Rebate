@@ -42,6 +42,23 @@ class Sub2ApiUserRepository
     }
 
     /**
+     * @return array<int, Sub2ApiUserData>
+     */
+    public function childrenOf(int $inviterId): array
+    {
+        if ($inviterId <= 0) {
+            return [];
+        }
+
+        return $this->baseQuery()
+            ->where('ua.inviter_id', $inviterId)
+            ->orderBy('u.id')
+            ->get()
+            ->map(fn (mixed $row): Sub2ApiUserData => Sub2ApiUserData::fromRow($row))
+            ->all();
+    }
+
+    /**
      * @return array<int, string>
      */
     public function identityProviders(int $userId): array

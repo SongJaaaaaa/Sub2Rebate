@@ -28,6 +28,34 @@
 - Sub2API Integration
 - 项目文档
 
+## 2026-06-15：Sub2API 删除下级后邀请关系实时刷新
+
+目标：
+
+- 修复 Sub2API 中删除下级邀请账号后，Sub2Rebate 推广中心仍继续展示旧下级的问题。
+- 推广中心、邀请树和邀请记录每次查询都重新读取 Sub2API 当前用户状态。
+
+完成：
+
+- `InviteService::me()`、`tree()`、`records()` 改为走 `refreshSub2ApiTeam()`。
+- 新增 `InviteService::refreshSub2ApiTeam()`：根用户可从 Sub2API 读取时，遍历本地团队下级并逐个重新查询 Sub2API；上游明确查不到的用户会从 `referral_paths` 移出其整条下级分支，上游查询异常则保留本地路径，避免只读库短暂故障误清数据。
+- `/promotion/summary` 和 `/promotion/conversions` 改为使用刷新后的团队路径，避免推广中心统计和列表继续读旧快照。
+- 不删除本地 `users`，避免误伤历史返利、提现、审计等账务记录；本次只清理邀请路径展示关系。
+- 更新 Invite 模块文档和项目状态。
+
+验证：
+
+- `php artisan test --filter='InviteTest|DeepDataSyncTest|DeepApiEndpointTest'` 通过：38 个测试、176 个断言。
+- `git diff --check` 通过。
+- 本地 Laravel 已启动在 `http://127.0.0.1:8000`，Vite 已用新版 Node 启动在 `http://127.0.0.1:5173`。
+- Sub2API 公开接口确认当前 `registration_enabled = false`、`affiliate_enabled = true`。
+- Sub2API 设置保存端点已确认：`PUT /api/v1/admin/settings` 是全量保存，不能只传局部字段；探测时短暂导致 `promo_code_enabled` 变为 false，已立即用全量设置恢复为 `registration_enabled = false`、`promo_code_enabled = true`、`affiliate_enabled = true`，公开接口已复核。
+
+注意：
+
+- 真实多层级邀请深测已完成：使用 Desert 推广中心 Sub2API 邀请码 `8UDG84TQD7BD` 真实创建 A 主干 31 个账号（5 层全二叉，层级 1-5 为 1/2/4/8/16）和 B 主干 15 个账号（4 层全二叉，层级 1-4 为 1/2/4/8）。本地推广中心页面显示 Desert 直邀 3、团队 47，邀请记录可见 A/B/A0/A1/B0/B1 等节点；Sub2API 公开设置已恢复 `registration_enabled = false`。
+- 当前本机 `127.0.0.1:15432` 只读库隧道连接拒绝，因此真实删除账号后的线上连通性需要恢复隧道后再补跑；本次删除分支行为已通过 Feature Test 覆盖，且上游查询异常时不会误删本地路径。
+
 ## 2026-06-15：提交前进度快照
 
 目标：

@@ -29,7 +29,7 @@ class PromotionController extends Controller
         }
 
         $invite = $this->invites->me($user);
-        $ref = $this->invites->ensurePath($user);
+        $ref = $this->invites->refreshSub2ApiTeam($user);
         $prefix = trim((string) $ref->path, '/').'/';
         $teamIds = DB::table('referral_paths')
             ->where('path', 'like', $prefix.'%')
@@ -64,7 +64,7 @@ class PromotionController extends Controller
         }
 
         [$page, $pageSize] = $this->pageParams((int) $request->integer('page', 1), (int) $request->integer('pageSize', 20));
-        $ref = $this->invites->ensurePath($user);
+        $ref = $this->invites->refreshSub2ApiTeam($user);
         $prefix = trim((string) $ref->path, '/').'/';
 
         $query = DB::table('referral_paths as rp')
