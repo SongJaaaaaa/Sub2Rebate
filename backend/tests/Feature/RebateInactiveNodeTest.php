@@ -21,6 +21,8 @@ class RebateInactiveNodeTest extends TestCase
 {
     use RefreshDatabase;
 
+    public array $fakeSub2Users = [];
+
     public function test_disabled_node_stays_in_tree_and_cannot_receive_milestone(): void
     {
         [$a, $b, $c] = $this->chain(3);
@@ -111,7 +113,7 @@ class RebateInactiveNodeTest extends TestCase
         $this->assertSame('4.285714', $this->money($rows[1]->rebate_amount));
     }
 
-    public function test_lie_flat_command_disables_inactive_user_and_recharge_restores_it(): void
+    public function test_lie_flat_command_disables_inactive_user_and_successful_recharge_at_threshold_restores_it(): void
     {
         $user = $this->user(1001, 'lazy');
         $user->forceFill([
@@ -152,6 +154,27 @@ class RebateInactiveNodeTest extends TestCase
             'rebate_status' => 'eligible',
             'rebate_disabled_reason' => null,
         ]);
+    }
+
+    public function test_sub2api_total_recharged_growth_records_activity_but_does_not_restore_rebate_status(): void
+    {
+        $user = $this->user(1001, 'lazy');
+        $user->forceFill([
+            'rebate_status' => 'disabled',
+            'rebate_disabled_reason' => 'lie_flat',
+            'last_sub2api_balance' => '100',
+            'last_sub2api_total_recharged' => '100',
+        ])->save();
+
+        $this->fakeSub2Users([$this->sub2User($user, '120.01', '120.01')]);
+        $this->artisan('rebate:check-lie-flat-users --limit=10')->assertSuccessful();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'rebate_status' => 'disabled',
+            'rebate_disabled_reason' => 'lie_flat',
+        ]);
+        $this->assertNotNull($user->refresh()->last_recharge_at);
     }
 
     public function test_balance_decrease_keeps_user_active_and_balance_increase_does_not_create_event(): void
@@ -272,19 +295,19 @@ class RebateInactiveNodeTest extends TestCase
 
     private function fakeSub2Users(array $users): void
     {
-        $byId = [];
+        $this->fakeSub2Users = [];
         foreach ($users as $user) {
-            $byId[$user->id] = $user;
+            $this->fakeSub2Users[$user->id] = $user;
         }
 
-        $this->app->instance(Sub2ApiUserRepository::class, new class($byId) extends Sub2ApiUserRepository {
-            public function __construct(private readonly array $byId)
+        $this->app->instance(Sub2ApiUserRepository::class, new class($this) extends Sub2ApiUserRepository {
+            public function __construct(private readonly RebateInactiveNodeTest $test)
             {
             }
 
             public function findById(int $id): ?Sub2ApiUserData
             {
-                return $this->byId[$id] ?? null;
+                return $this->test->fakeSub2Users[$id] ?? null;
             }
         });
     }

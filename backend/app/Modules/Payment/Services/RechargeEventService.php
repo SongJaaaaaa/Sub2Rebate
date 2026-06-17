@@ -156,7 +156,7 @@ class RechargeEventService
                 'occurred_at' => $data['occurred_at'] ?? now(),
             ]);
 
-            $this->eligibility->markRecharge($user->refresh(), $event->occurred_at);
+            $this->eligibility->recordSuccessfulRecharge($user->refresh(), $event->standard_amount, $event->occurred_at);
 
             return [
                 'ok' => true,

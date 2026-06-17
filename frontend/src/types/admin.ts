@@ -57,6 +57,7 @@ export interface RiskControlConfig {
   autoFreezeThreshold: number
   lieFlatEnabled: boolean
   lieFlatDays: number
+  lieFlatRestoreMinRecharge: string
 }
 
 export interface FullRebateConfig {

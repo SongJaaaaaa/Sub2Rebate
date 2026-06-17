@@ -68,11 +68,7 @@ class CheckLieFlatUsersCommand extends Command
                 }
 
                 if ($oldTotal !== null && $total > $this->amount($oldTotal)) {
-                    $wasDisabled = ! $this->eligibility->eligible($user);
-                    $this->eligibility->markRecharge($user, $now);
-                    if ($wasDisabled) {
-                        $restored++;
-                    }
+                    $this->eligibility->recordRechargeActivity($user, $now);
                 }
 
                 $user->forceFill([

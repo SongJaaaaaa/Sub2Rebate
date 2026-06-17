@@ -14,7 +14,7 @@ const config = reactive<FullRebateConfig>({
   milestone: { threshold: '100', reward: '15.00', maxTimes: 2 },
   multiLevel: { enabled: true, totalPoolRate: '15', decayCoefficient: '0.4', maxDepth: 5, inactiveNodeMode: 'platform' },
   withdrawLimit: { minAmount: '100.00', cooldownHours: 24 },
-  riskControl: { blacklistEnabled: true, autoFreezeThreshold: 50, lieFlatEnabled: true, lieFlatDays: 7 },
+  riskControl: { blacklistEnabled: true, autoFreezeThreshold: 50, lieFlatEnabled: true, lieFlatDays: 7, lieFlatRestoreMinRecharge: '10' },
   lastModifiedBy: '',
   lastModifiedAt: '',
 })
@@ -337,6 +337,17 @@ onMounted(() => fetchConfig())
             <span class="text-sm font-semibold text-[var(--sr-muted)]">连续无活跃天数</span>
             <el-input-number v-model="config.riskControl.lieFlatDays" :min="1" :max="365" :disabled="!config.riskControl.lieFlatEnabled" />
             <span class="text-xs text-[var(--sr-muted)]">天</span>
+          </div>
+          <div class="mt-4">
+            <label class="mb-1 flex items-center gap-1 text-sm font-semibold text-[var(--sr-muted)]">
+              置灰恢复最低充值金额
+              <el-tooltip placement="top" content="用户被防躺平置灰后，充值成功回调确认的单次金额必须大于等于该值才会恢复返利资格。余额监控只记录活跃，不恢复资格。默认10元。">
+                <el-icon class="cursor-help text-blue-400" :size="14"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </label>
+            <el-input v-model="config.riskControl.lieFlatRestoreMinRecharge" :disabled="!config.riskControl.lieFlatEnabled" placeholder="10">
+              <template #suffix><span class="text-xs text-[var(--sr-muted)]">元</span></template>
+            </el-input>
           </div>
         </div>
       </AppCard>

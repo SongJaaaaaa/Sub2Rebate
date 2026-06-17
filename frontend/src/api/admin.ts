@@ -161,6 +161,7 @@ export const getFullRebateConfig = async (): Promise<ApiRes<FullRebateConfig>> =
         autoFreezeThreshold: 50,
         lieFlatEnabled: Boolean(risk.lie_flat_enabled ?? true),
         lieFlatDays: Number(risk.lie_flat_days ?? 7),
+        lieFlatRestoreMinRecharge: String(risk.lie_flat_restore_min_recharge ?? '10'),
       },
       lastModifiedBy: '',
       lastModifiedAt: '',
@@ -192,6 +193,7 @@ export const saveFullRebateConfig = async (config: FullRebateConfig): Promise<Ap
         blacklist_enabled: config.riskControl.blacklistEnabled,
         lie_flat_enabled: config.riskControl.lieFlatEnabled,
         lie_flat_days: config.riskControl.lieFlatDays,
+        lie_flat_restore_min_recharge: config.riskControl.lieFlatRestoreMinRecharge,
       },
     },
   })

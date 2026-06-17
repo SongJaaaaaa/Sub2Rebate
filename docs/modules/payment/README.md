@@ -282,6 +282,24 @@ sequenceDiagram
 - 返利链路继续复用现有代码，不需要再造一套事件系统。
 - 后台可以补单，不怕支付宝回调偶发丢失。
 
+### 10.6.1 置灰用户充值恢复口子
+
+后续真正接入支付成功回调时，需要在“支付已验签且确认成功、金额可信”的位置调用返利资格恢复口子：
+
+```text
+RebateEligibilityService::recordSuccessfulRecharge(user, paidAmount, paidAt)
+```
+
+业务规则：
+
+- 只基于充值成功回调或后台确认到账后的可信充值金额恢复返利资格。
+- 默认配置 `risk.lie_flat_restore_min_recharge = 10`。
+- 被防躺平置灰的用户，单次成功充值金额 `>= risk.lie_flat_restore_min_recharge` 时恢复为 `eligible`。
+- 小于该金额的充值只记录活跃时间，不恢复返利资格。
+- Sub2API 余额监控里的 `total_recharged` 增长只能记录活跃时间，不能作为恢复返利资格或自动发返利依据。
+
+当前个人二维码版本还没有自动支付成功回调；后台人工确认到账生成充值事件时已预留并复用该口子。正式回调版落地时，需要把同一口子接到 `RechargeCallbackService` 的成功处理流程中。
+
 ### 10.7 需要补充的配置项
 
 继续沿用现有 `config_items`，不新建配置表，增加这些键即可：

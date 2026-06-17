@@ -58,6 +58,7 @@ export const mockFullRebateConfig: FullRebateConfig = {
     autoFreezeThreshold: 50,
     lieFlatEnabled: true,
     lieFlatDays: 7,
+    lieFlatRestoreMinRecharge: '10',
   },
   lastModifiedBy: 'admin_01',
   lastModifiedAt: '2023-11-24 14:20',

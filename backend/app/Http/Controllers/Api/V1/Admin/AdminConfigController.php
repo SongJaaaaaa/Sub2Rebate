@@ -129,6 +129,7 @@ class AdminConfigController extends Controller
             'withdraw.freeze_days' => ['name' => '返利冻结天数', 'type' => 'number', 'min' => 0, 'max' => 365],
             'withdraw.review_mode' => ['name' => '提现审核模式', 'type' => 'string', 'in' => ['manual', 'auto']],
             'risk.lie_flat_days' => ['name' => '连续无活跃天数', 'type' => 'number', 'min' => 1, 'max' => 365],
+            'risk.lie_flat_restore_min_recharge' => ['name' => '置灰恢复最低充值金额', 'type' => 'number', 'min' => 0],
         ];
     }
 

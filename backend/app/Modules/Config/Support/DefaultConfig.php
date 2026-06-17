@@ -214,6 +214,15 @@ class DefaultConfig
                 'tips' => '防躺平检测的连续无活跃天数，默认 7 天',
                 'sort' => 170,
             ],
+            [
+                'key' => 'risk.lie_flat_restore_min_recharge',
+                'group' => 'risk',
+                'name' => '置灰恢复最低充值金额',
+                'type' => 'decimal',
+                'value' => '10',
+                'tips' => '用户被防躺平置灰后，充值成功回调确认的单次金额必须大于等于该值才会恢复返利资格；余额监控只记录活跃，不恢复资格',
+                'sort' => 180,
+            ],
         ];
     }
 
