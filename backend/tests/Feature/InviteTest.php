@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 use Tests\TestCase;
 
 class InviteTest extends TestCase
@@ -118,6 +119,143 @@ class InviteTest extends TestCase
             ->assertJsonPath('message', '已绑定邀请关系');
     }
 
+    public function test_query_refreshes_sub2api_team_and_removes_deleted_invite_branch(): void
+    {
+        $root = $this->user(2001, 'root', 'root@example.com', 'AFFROOT');
+        $live = $this->user(2002, 'live', 'live@example.com', 'AFFLIVE');
+        $deleted = $this->user(2003, 'deleted', 'deleted@example.com', 'AFFDEL');
+        $leaf = $this->user(2004, 'leaf', 'leaf@example.com', 'AFFLEAF');
+
+        DB::table('referral_paths')->insert([
+            [
+                'user_id' => $root->id,
+                'parent_user_id' => null,
+                'invite_code' => 'AFFROOT',
+                'path' => '2001',
+                'depth' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => $live->id,
+                'parent_user_id' => $root->id,
+                'invite_code' => 'AFFLIVE',
+                'path' => '2001/2002',
+                'depth' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => $deleted->id,
+                'parent_user_id' => $root->id,
+                'invite_code' => 'AFFDEL',
+                'path' => '2001/2003',
+                'depth' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => $leaf->id,
+                'parent_user_id' => $deleted->id,
+                'invite_code' => 'AFFLEAF',
+                'path' => '2001/2003/2004',
+                'depth' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $this->fakeSub2Users([
+            2001 => $this->sub2User(2001, 'root@example.com', 'root', 'AFFROOT'),
+            2002 => $this->sub2User(2002, 'live@example.com', 'live', 'AFFLIVE', 2001),
+        ]);
+
+        $this->actingAs($root)
+            ->getJson('/api/v1/invite/tree?maxDepth=3')
+            ->assertOk()
+            ->assertJsonPath('data.root.children.0.id', 2002)
+            ->assertJsonMissingPath('data.root.children.1');
+
+        $this->assertDatabaseHas('referral_paths', ['user_id' => 2002, 'parent_user_id' => 2001]);
+        $this->assertDatabaseMissing('referral_paths', ['user_id' => 2003]);
+        $this->assertDatabaseMissing('referral_paths', ['user_id' => 2004]);
+
+        $this->actingAs($root)
+            ->getJson('/api/v1/invite/records?page=1&pageSize=20')
+            ->assertOk()
+            ->assertJsonPath('data.total', 1)
+            ->assertJsonPath('data.list.0.id', 2002);
+    }
+
+    public function test_query_keeps_local_branch_when_sub2api_child_lookup_fails(): void
+    {
+        $root = $this->user(3001, 'root', 'root@example.com', 'AFFROOT');
+        $child = $this->user(3002, 'child', 'child@example.com', 'AFFCHILD');
+
+        DB::table('referral_paths')->insert([
+            [
+                'user_id' => $root->id,
+                'parent_user_id' => null,
+                'invite_code' => 'AFFROOT',
+                'path' => '3001',
+                'depth' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => $child->id,
+                'parent_user_id' => $root->id,
+                'invite_code' => 'AFFCHILD',
+                'path' => '3001/3002',
+                'depth' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $this->fakeSub2UsersWithErrorIds([
+            3001 => $this->sub2User(3001, 'root@example.com', 'root', 'AFFROOT'),
+        ], [3002]);
+
+        $this->actingAs($root)
+            ->getJson('/api/v1/invite/tree?maxDepth=3')
+            ->assertOk()
+            ->assertJsonPath('data.root.children.0.id', 3002);
+
+        $this->assertDatabaseHas('referral_paths', ['user_id' => 3002, 'parent_user_id' => 3001]);
+    }
+
+    public function test_query_refreshes_sub2api_team_and_discovers_new_children(): void
+    {
+        $root = $this->user(4001, 'root', 'root@example.com', 'AFFROOT');
+        DB::table('referral_paths')->insert([
+            'user_id' => $root->id,
+            'parent_user_id' => null,
+            'invite_code' => 'AFFROOT',
+            'path' => '4001',
+            'depth' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->fakeSub2Users([
+            4001 => $this->sub2User(4001, 'root@example.com', 'root', 'AFFROOT'),
+            4002 => $this->sub2User(4002, 'child@example.com', 'child', 'AFFCHILD', 4001),
+            4003 => $this->sub2User(4003, 'leaf@example.com', 'leaf', 'AFFLEAF', 4002),
+        ]);
+
+        $this->actingAs($root)
+            ->getJson('/api/v1/invite/tree?maxDepth=3')
+            ->assertOk()
+            ->assertJsonPath('data.root.children.0.id', 4002)
+            ->assertJsonPath('data.root.children.0.children.0.id', 4003);
+
+        $this->assertDatabaseHas('users', ['id' => 4002, 'email' => 'child@example.com']);
+        $this->assertDatabaseHas('users', ['id' => 4003, 'email' => 'leaf@example.com']);
+        $this->assertDatabaseHas('referral_paths', ['user_id' => 4002, 'parent_user_id' => 4001, 'path' => '4001/4002']);
+        $this->assertDatabaseHas('referral_paths', ['user_id' => 4003, 'parent_user_id' => 4002, 'path' => '4001/4002/4003']);
+    }
+
     public function test_invite_endpoints_require_login(): void
     {
         $this->getJson('/api/v1/invite/me')
@@ -132,7 +270,7 @@ class InviteTest extends TestCase
         return (string) DB::table('referral_paths')->where('user_id', $user->id)->value('invite_code');
     }
 
-    private function user(int $id, string $username, string $email = ''): User
+    private function user(int $id, string $username, string $email = '', string $affCode = ''): User
     {
         return User::query()->create([
             'id' => $id,
@@ -140,10 +278,11 @@ class InviteTest extends TestCase
             'email' => $email !== '' ? $email : $username.'@example.com',
             'role' => 'user',
             'status' => 'active',
+            'sub2api_aff_code' => $affCode !== '' ? $affCode : null,
         ]);
     }
 
-    private function sub2User(int $id, string $email, string $username, string $affCode): Sub2ApiUserData
+    private function sub2User(int $id, string $email, string $username, string $affCode, ?int $inviterId = null): Sub2ApiUserData
     {
         return new Sub2ApiUserData(
             id: $id,
@@ -155,7 +294,7 @@ class InviteTest extends TestCase
             balance: '0',
             totalRecharged: '0',
             affCode: $affCode,
-            inviterId: null,
+            inviterId: $inviterId,
             createdAt: CarbonImmutable::parse('2026-06-13 12:00:00', 'Asia/Shanghai'),
             updatedAt: CarbonImmutable::parse('2026-06-13 12:00:00', 'Asia/Shanghai'),
         );
@@ -188,6 +327,64 @@ class InviteTest extends TestCase
             public function findById(int $id): ?Sub2ApiUserData
             {
                 return $this->users[$id] ?? null;
+            }
+
+            public function childrenOf(int $inviterId): array
+            {
+                return array_values(array_filter(
+                    $this->users,
+                    fn (Sub2ApiUserData $user): bool => $user->inviterId === $inviterId
+                ));
+            }
+
+            public function identityProviders(int $userId): array
+            {
+                return ['email'];
+            }
+        });
+    }
+
+    /**
+     * @param array<int, Sub2ApiUserData> $users
+     * @param array<int> $errorIds
+     */
+    private function fakeSub2UsersWithErrorIds(array $users, array $errorIds): void
+    {
+        $this->app->instance(Sub2ApiUserRepository::class, new class($users, $errorIds) extends Sub2ApiUserRepository {
+            /**
+             * @param array<int, Sub2ApiUserData> $users
+             * @param array<int> $errorIds
+             */
+            public function __construct(private readonly array $users, private readonly array $errorIds)
+            {
+            }
+
+            public function findByAccount(string $account): ?Sub2ApiUserData
+            {
+                foreach ($this->users as $user) {
+                    if (in_array($account, [$user->email, $user->username], true)) {
+                        return $user;
+                    }
+                }
+
+                return null;
+            }
+
+            public function findById(int $id): ?Sub2ApiUserData
+            {
+                if (in_array($id, $this->errorIds, true)) {
+                    throw new RuntimeException('sub2api lookup failed');
+                }
+
+                return $this->users[$id] ?? null;
+            }
+
+            public function childrenOf(int $inviterId): array
+            {
+                return array_values(array_filter(
+                    $this->users,
+                    fn (Sub2ApiUserData $user): bool => $user->inviterId === $inviterId
+                ));
             }
 
             public function identityProviders(int $userId): array

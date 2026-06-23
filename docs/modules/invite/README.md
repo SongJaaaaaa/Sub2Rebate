@@ -72,7 +72,9 @@ updated_at
 - 已实现自邀请、重复绑定和循环邀请基础校验。
 - 已实现 Sub2API 只读连接故障降级：邀请资料和邀请树保留本地路径数据，不因上游只读库短暂不可达直接 500。
 - `syncFromSub2Api()` 同步上级链路时限制最多递归 50 层，并继续保留 `$seen` 防环。
+- 已实现查询时刷新 Sub2API 当前团队：推广中心、邀请树和邀请记录查询会重新读取 Sub2API 用户；如果上游明确查不到某个下级账号，本地 `referral_paths` 中该下级分支会移出，避免旧邀请关系继续展示；如果只是 Sub2API 查询异常，则保留本地路径，避免只读库短暂故障误清数据。
 - 已补充 `InviteTest`，覆盖 A 邀请 B、B 邀请 C、邀请树、邀请记录和登录拦截。
+- 已补充 `InviteTest` 删除分支回归用例，覆盖 Sub2API 已删除下级不再出现在树和记录中，以及只读查询异常时不误删本地分支。
 
 ## 7. 待实现
 
@@ -101,3 +103,11 @@ updated_at
 - 完成：Sub2API 只读连接异常时降级使用本地邀请路径；避免登录后邀请接口因只读库故障返回 500。
 - 完成：同步递归深度限制为 50 层。
 - 验证：后端全量测试通过，141 个测试、668 个断言。
+
+### 2026-06-15
+
+- 目标：修复 Sub2API 删除下级账号后，Sub2Rebate 推广中心仍显示旧邀请关系的问题。
+- 完成：`InviteService::refreshSub2ApiTeam()` 在查询推广资料、邀请树和邀请记录时重新读取 Sub2API 当前用户状态，并按 `inviter_id` 发现新增直接下级；上游明确查不到的本地下级账号会从本地 `referral_paths` 连同其分支移出，上游查询异常时保留本地路径。
+- 完成：`/promotion/summary` 和 `/promotion/conversions` 改为使用刷新后的团队路径。
+- 验证：`InviteTest|DeepDataSyncTest|DeepApiEndpointTest` 通过，38 个测试、176 个断言。
+- 验证：真实创建 Desert 下 A 主干 31 个账号（5 层全二叉）和 B 主干 15 个账号（4 层全二叉）；推广中心页面显示 Desert 邀请链接 `https://api.sjiaa.cc.cd/register?aff=8UDG84TQD7BD`、直邀 3、团队 47。
