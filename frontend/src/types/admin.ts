@@ -4,6 +4,9 @@ import type { WithdrawRecord } from '@/types/withdraw'
 // 管理端 — 用户管理
 export interface AdminUser extends User {
   status: 'active' | 'banned'
+  rebateStatus?: 'eligible' | 'disabled'
+  rebateDisabledReason?: string | null
+  rebateDisabledAt?: string
   parentNickname: string | null
   directInviteCount: number
   totalRebateAmount: string
@@ -41,6 +44,7 @@ export interface MultiLevelConfig {
   totalPoolRate: string
   decayCoefficient: string
   maxDepth: number
+  inactiveNodeMode: 'platform' | 'exclude_recalculate'
 }
 
 export interface WithdrawLimitConfig {
@@ -51,6 +55,9 @@ export interface WithdrawLimitConfig {
 export interface RiskControlConfig {
   blacklistEnabled: boolean
   autoFreezeThreshold: number
+  lieFlatEnabled: boolean
+  lieFlatDays: number
+  lieFlatRestoreMinRecharge: string
 }
 
 export interface FullRebateConfig {
@@ -72,6 +79,9 @@ export interface RelationshipNode {
   totalRecharge: string
   directReferrals: number
   status: 'active' | 'banned' | 'warning'
+  rebateStatus?: 'eligible' | 'disabled'
+  rebateDisabledReason?: string | null
+  rebateDisabledAt?: string
   children?: RelationshipNode[]
 }
 

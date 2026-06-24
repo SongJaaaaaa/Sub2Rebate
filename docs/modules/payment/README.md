@@ -282,6 +282,24 @@ sequenceDiagram
 - 返利链路继续复用现有代码，不需要再造一套事件系统。
 - 后台可以补单，不怕支付宝回调偶发丢失。
 
+### 10.6.1 置灰用户充值恢复口子
+
+后续真正接入支付成功回调时，需要在“支付已验签且确认成功、金额可信”的位置调用返利资格恢复口子：
+
+```text
+RebateEligibilityService::recordSuccessfulRecharge(user, paidAmount, paidAt)
+```
+
+业务规则：
+
+- 只基于充值成功回调或后台确认到账后的可信充值金额恢复返利资格。
+- 默认配置 `risk.lie_flat_restore_min_recharge = 10`。
+- 被防躺平置灰的用户，单次成功充值金额 `>= risk.lie_flat_restore_min_recharge` 时恢复为 `eligible`。
+- 小于该金额的充值只记录活跃时间，不恢复返利资格。
+- Sub2API 余额监控里的 `total_recharged` 增长只能记录活跃时间，不能作为恢复返利资格或自动发返利依据。
+
+当前个人二维码版本还没有自动支付成功回调；后台人工确认到账生成充值事件时已预留并复用该口子。正式回调版落地时，需要把同一口子接到 `RechargeCallbackService` 的成功处理流程中。
+
 ### 10.7 需要补充的配置项
 
 继续沿用现有 `config_items`，不新建配置表，增加这些键即可：
@@ -333,3 +351,117 @@ sequenceDiagram
 - 需要提供 Sub2API 管理凭据：优先 `SUB2API_ADMIN_API_KEY`，或 `SUB2API_ADMIN_EMAIL` / `SUB2API_ADMIN_PASSWORD`。
 - 需要确认赠送规则是否继续使用：100 送 5、200 送 15、500 送 50、1000 送 120。
 - 当前个人支付宝二维码模式没有官方支付回调，到账仍需管理员人工审核。
+
+## 12. AliMPay/经营码支付通道接入方案
+
+> 2026-06-24 已完成 AliMPay 经营码真实 1 元公网回调验证。AliMPay 不建议当作“页面插件”直接硬塞进充值页，而应作为独立支付通道接入分销系统。
+
+### 12.1 推荐定位
+
+新增支付方式：`alimpay_qr`，后台展示名可配置为 `AliMPay/经营码`。
+
+核心边界：
+
+- 分销系统负责创建充值订单、记录用户、充值金额、Sub2API 入账和返利。
+- AliMPay 负责经营码展示、支付宝账单查询、金额匹配和发起支付通知。
+- 分销系统新增独立通知入口接收 AliMPay 的 CodePay/易支付风格回调。
+
+不要复用当前支付宝官方 RSA 回调入口。AliMPay 通知格式是 CodePay/易支付 MD5 签名，和支付宝官方异步回调不是同一种协议。
+
+### 12.2 推荐流程
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant BE as Sub2Rebate
+    participant AMP as AliMPay
+    participant S2A as Sub2API
+
+    U->>FE: 选择充值金额
+    FE->>BE: 创建 recharge_order
+    BE->>BE: 生成 out_trade_no 和 AliMPay 支付参数
+    BE-->>FE: 返回 AliMPay submit 地址
+    FE->>AMP: 跳转 /submit.php
+    U->>AMP: 扫经营码付款
+    AMP->>AMP: 监控支付宝账单并匹配订单
+    AMP->>BE: notify_url 通知支付成功
+    BE->>BE: 验签 + 查订单 + 校验金额 + 幂等
+    BE->>S2A: 增加用户 Sub2API 额度
+    BE->>BE: 写支付日志、充值记录、返利事件
+    BE-->>AMP: success
+    AMP-->>FE: 跳转 return_url
+```
+
+### 12.3 分销系统需要新增的能力
+
+- 新增 AliMPay 支付通道配置：商户 `pid`、商户 `key`、AliMPay 地址、启用状态、超时时间、展示名称。
+- 新增 CodePay/易支付风格通知入口，例如 `POST/GET /api/v1/payments/alimpay/notify`。
+- 通知入口独立做 MD5 验签，不走支付宝官方 RSA 验签逻辑。
+- 充值订单保存 `pay_channel = alimpay_qr`、`out_trade_no`、`paid_amount`、`provider_trade_no`、`notify_payload`、`paid_at`、`credited_at`。
+- 用户支付页只轮询分销系统订单状态，不直接依赖 AliMPay 前端状态。
+- 正式环境由服务端定时任务或队列保证回调失败后的补偿，不依赖用户浏览器触发。
+
+### 12.4 用户端支付日志
+
+用户端只展示自己的充值记录，字段建议：
+
+- 本地充值订单号。
+- 支付订单号 `out_trade_no`。
+- 支付金额。
+- 原始充值金额。
+- 赠送金额或活动金额。
+- 入账前 Sub2API 金额。
+- 入账后 Sub2API 金额。
+- 支付状态：待支付、已支付、入账中、已入账、失败、已关闭。
+- 支付通道：AliMPay/经营码。
+- 创建时间、支付时间、入账时间。
+- 失败原因的用户可读摘要。
+
+用户端不要展示内部回调报文、验签细节、商户 key、账单查询错误堆栈。
+
+### 12.5 管理端支付日志
+
+管理端需要能排查和补单，字段建议：
+
+- 用户 ID、用户账号、充值订单号、`out_trade_no`。
+- 支付金额、订单金额、到账金额、匹配金额。
+- 原 Sub2API 金额、充值后 Sub2API 金额、实际增加金额。
+- 支付通道、商户 `pid`、AliMPay 账单流水号或 `trade_no`。
+- AliMPay 匹配时间、通知时间、通知次数、最近一次通知结果。
+- 验签结果、金额校验结果、订单状态变更记录。
+- 原始回调摘要，敏感字段脱敏后保存。
+- Sub2API 入账请求结果、失败原因、重试次数。
+- 管理员手动补单、重试入账、关闭订单、标记异常的操作日志。
+
+### 12.6 安全要求
+
+- 必须校验 AliMPay/CodePay MD5 签名。
+- 必须校验 `pid` 是当前配置的商户 ID。
+- 必须用本地订单查 `out_trade_no`，不能只相信回调里的金额和状态。
+- 必须校验订单金额与回调金额一致。
+- 必须做幂等：同一订单、同一支付宝流水重复通知只能入账一次。
+- 支付成功和 Sub2API 入账要放在事务或可恢复的状态机里，避免“钱到了但额度没加”。
+- 对订单行加锁，避免并发回调重复加额度。
+- `notify_url` 和 `return_url` 使用 HTTPS 公网地址。
+- 密钥、真实经营码图片、账单数据、日志禁止提交到 Git。
+- 回调接口加频率限制和审计日志，但不要只靠来源 IP 判断真假。
+- 失败通知进入重试队列，连续失败要给管理端告警。
+
+### 12.7 最小改动接入路径
+
+第一阶段先保守接入：
+
+1. 保留现有手工二维码充值流程。
+2. 新增 `alimpay_qr` 支付通道配置。
+3. 创建订单后生成 AliMPay submit URL，用户跳转支付。
+4. 新增 AliMPay notify 入口，验签后复用现有充值入账服务。
+5. 用户端充值记录新增 AliMPay 状态展示。
+6. 管理端新增 AliMPay 支付日志和手动重试入账。
+
+第二阶段再优化：
+
+- 将 AliMPay 账单监控迁移为服务端常驻任务或队列任务。
+- 做自动补单和异常订单告警。
+- 做多支付通道统一支付日志。
+- 做退款、关闭订单、人工冲正流程。

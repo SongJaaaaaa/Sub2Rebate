@@ -121,12 +121,15 @@ class AdminConfigController extends Controller
             'milestone.max_times' => ['name' => '里程碑次数上限', 'type' => 'number', 'min' => 0, 'max' => 100],
             'rebate.pool_ratio' => ['name' => '返利池比例', 'type' => 'number', 'min' => 0, 'max' => 1],
             'rebate.decay_factor' => ['name' => '衰减系数', 'type' => 'number', 'min' => 0.000001, 'max' => 1],
+            'rebate.inactive_node_mode' => ['name' => '失效节点返利处理方式', 'type' => 'string', 'in' => ['platform', 'exclude_recalculate']],
             'payment.cny_to_credit_rate' => ['name' => '人民币额度换算比例', 'type' => 'number', 'min' => 0.000001],
             'payment.order_expire_minutes' => ['name' => '充值订单有效期', 'type' => 'number', 'min' => 1, 'max' => 1440],
             'withdraw.min_amount' => ['name' => '最低提现金额', 'type' => 'number', 'min' => 0.01],
             'withdraw.daily_limit' => ['name' => '每日提现次数', 'type' => 'number', 'min' => 1, 'max' => 100],
             'withdraw.freeze_days' => ['name' => '返利冻结天数', 'type' => 'number', 'min' => 0, 'max' => 365],
             'withdraw.review_mode' => ['name' => '提现审核模式', 'type' => 'string', 'in' => ['manual', 'auto']],
+            'risk.lie_flat_days' => ['name' => '连续无活跃天数', 'type' => 'number', 'min' => 1, 'max' => 365],
+            'risk.lie_flat_restore_min_recharge' => ['name' => '置灰恢复最低充值金额', 'type' => 'number', 'min' => 0],
         ];
     }
 

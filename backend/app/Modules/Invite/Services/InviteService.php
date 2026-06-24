@@ -109,6 +109,10 @@ class InviteService
                     'updated_at' => now(),
                 ]);
 
+            User::query()
+                ->where('id', (int) $parent->user_id)
+                ->update(['last_invited_at' => now(), 'updated_at' => now()]);
+
             $this->refreshChildren((int) $user->id, $newPath, $newDepth);
         });
 
@@ -162,6 +166,8 @@ class InviteService
                     'level' => $level,
                     'totalPaidAmount' => $this->money(0),
                     'totalRebateAmount' => $this->money(0),
+                    'rebateStatus' => (string) ($row->rebate_status ?? 'eligible'),
+                    'rebateDisabledReason' => $row->rebate_disabled_reason ?? null,
                     'boundAt' => $this->formatTime($row->updated_at),
                 ];
             })->all(),
@@ -239,6 +245,10 @@ class InviteService
             return $ref;
         }
 
+        if ($ref->parent_user_id !== null) {
+            return $ref;
+        }
+
         $parent = User::query()->find((int) $parentId);
         if (! $parent instanceof User) {
             $sub2Parent = $this->sub2User((int) $parentId);
@@ -276,6 +286,10 @@ class InviteService
                 'depth' => $newDepth,
                 'updated_at' => now(),
             ]);
+
+        $parent->forceFill([
+            'last_invited_at' => now(),
+        ])->save();
 
         $this->refreshChildren((int) $user->id, $newPath, $newDepth);
 
@@ -362,6 +376,36 @@ class InviteService
         return array_reverse($ids);
     }
 
+    public function rebateAncestors(User $user): array
+    {
+        $ids = $this->ancestorIds($user);
+        if ($ids === []) {
+            return [];
+        }
+
+        $users = User::query()
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        $rows = [];
+        foreach ($ids as $index => $id) {
+            $ancestor = $users->get($id);
+            if (! $ancestor instanceof User) {
+                continue;
+            }
+
+            $rows[] = [
+                'user_id' => (int) $ancestor->id,
+                'level' => $index + 1,
+                'rebate_status' => (string) ($ancestor->rebate_status ?: 'eligible'),
+                'rebate_disabled_reason' => $ancestor->rebate_disabled_reason,
+            ];
+        }
+
+        return $rows;
+    }
+
     private function treeNode(User $user, int $level, int $maxDepth): array
     {
         $node = [
@@ -369,6 +413,8 @@ class InviteService
             'username' => (string) ($user->username ?: $user->email ?: 'user_'.$user->id),
             'nickname' => (string) ($user->username ?: $user->email ?: 'user_'.$user->id),
             'level' => $level,
+            'rebateStatus' => (string) ($user->rebate_status ?: 'eligible'),
+            'rebateDisabledReason' => $user->rebate_disabled_reason,
             'children' => [],
         ];
 
