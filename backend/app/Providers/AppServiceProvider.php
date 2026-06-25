@@ -35,5 +35,13 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(3)->by((string) $userId);
         });
+
+        RateLimiter::for('payment-notify', function (Request $request) {
+            if (app()->environment('testing') && ! config('sub2rebate.test_rate_limit', false)) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(120)->by((string) $request->ip());
+        });
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminAuditLogController;
 use App\Http\Controllers\Api\V1\Admin\AdminBalanceController;
 use App\Http\Controllers\Api\V1\Admin\AdminConfigController;
 use App\Http\Controllers\Api\V1\Admin\AdminDashboardController;
+use App\Http\Controllers\Api\V1\Admin\AdminPaymentNotifyLogController;
 use App\Http\Controllers\Api\V1\Admin\AdminRechargeOrderController;
 use App\Http\Controllers\Api\V1\Admin\AdminRebateController;
 use App\Http\Controllers\Api\V1\Admin\AdminRelationshipController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminUserController;
 use App\Http\Controllers\Api\V1\Admin\AdminWithdrawController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\PaymentNotifyController;
 use App\Http\Controllers\Api\V1\PromotionController;
 use App\Http\Controllers\Api\V1\RechargeController;
 use App\Http\Controllers\Api\V1\RebateRecordController;
@@ -24,6 +26,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::get('health', HealthController::class)->name('api.v1.health');
+    Route::match(['get', 'post'], 'payments/alimpay/notify', [PaymentNotifyController::class, 'alimpay'])
+        ->middleware('throttle:payment-notify')
+        ->name('api.v1.payments.alimpay.notify');
 
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('api.v1.auth.login');
 
@@ -37,6 +42,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('recharge/config', [RechargeController::class, 'config'])->name('api.v1.recharge.config');
         Route::post('recharge/orders', [RechargeController::class, 'create'])->name('api.v1.recharge.orders.create');
         Route::post('recharge/orders/{id}/submit', [RechargeController::class, 'submit'])->name('api.v1.recharge.orders.submit');
+        Route::get('recharge/orders/{id}', [RechargeController::class, 'show'])->name('api.v1.recharge.orders.show');
         Route::get('recharge/orders', [RechargeController::class, 'records'])->name('api.v1.recharge.orders');
         Route::get('invite/me', [InviteController::class, 'me'])->name('api.v1.invite.me');
         Route::post('invite/bind', [InviteController::class, 'bind'])->name('api.v1.invite.bind');
@@ -63,6 +69,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('recharge-orders', [AdminRechargeOrderController::class, 'index'])->name('api.v1.admin.recharge-orders');
         Route::post('recharge-orders/{id}/approve', [AdminRechargeOrderController::class, 'approve'])->name('api.v1.admin.recharge-orders.approve');
         Route::post('recharge-orders/{id}/reject', [AdminRechargeOrderController::class, 'reject'])->name('api.v1.admin.recharge-orders.reject');
+        Route::post('recharge-orders/{id}/retry-credit', [AdminRechargeOrderController::class, 'retryCredit'])->name('api.v1.admin.recharge-orders.retry-credit');
+        Route::get('payment-notify-logs', [AdminPaymentNotifyLogController::class, 'index'])->name('api.v1.admin.payment-notify-logs');
         Route::post('users/{id}/ban', [AdminUserController::class, 'ban'])->name('api.v1.admin.users.ban');
         Route::post('users/{id}/unban', [AdminUserController::class, 'unban'])->name('api.v1.admin.users.unban');
         Route::post('users/{id}/role', [AdminUserController::class, 'setRole'])->name('api.v1.admin.users.role');

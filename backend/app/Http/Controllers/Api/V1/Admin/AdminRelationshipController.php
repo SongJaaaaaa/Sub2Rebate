@@ -73,6 +73,9 @@ class AdminRelationshipController extends Controller
                 ->sum('standard_amount')),
             'directReferrals' => DB::table('referral_paths')->where('parent_user_id', $user->id)->count(),
             'status' => $user->status === 'banned' ? 'banned' : 'active',
+            'rebateStatus' => (string) ($user->rebate_status ?: 'eligible'),
+            'rebateDisabledReason' => $user->rebate_disabled_reason,
+            'rebateDisabledAt' => $this->time($user->rebate_disabled_at),
             'children' => [],
         ];
 

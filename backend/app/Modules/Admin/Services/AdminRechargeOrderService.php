@@ -79,6 +79,8 @@ class AdminRechargeOrderService
             $order->reviewed_by = $admin->id;
             $order->reviewed_at = now();
             $order->paid_at = now();
+            $order->credited_at = now();
+            $order->credit_status = RechargeOrder::CREDIT_SUCCESS;
             $order->review_remark = $remark;
             $order->rebate_event_id = $created['rebateEvent']->id ?? null;
             $order->save();

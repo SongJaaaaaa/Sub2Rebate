@@ -15,13 +15,16 @@ use stdClass;
 
 class InviteService
 {
+    private const SUB2API_MISSING = 'missing';
+    private const SUB2API_ERROR = 'error';
+
     public function __construct(private readonly Sub2ApiUserRepository $sub2Users)
     {
     }
 
     public function me(User $user): array
     {
-        $ref = $this->syncFromSub2Api($user);
+        $ref = $this->refreshSub2ApiTeam($user);
         $sub2User = $this->sub2User((int) $user->id);
 
         return [
@@ -106,6 +109,10 @@ class InviteService
                     'updated_at' => now(),
                 ]);
 
+            User::query()
+                ->where('id', (int) $parent->user_id)
+                ->update(['last_invited_at' => now(), 'updated_at' => now()]);
+
             $this->refreshChildren((int) $user->id, $newPath, $newDepth);
         });
 
@@ -123,7 +130,7 @@ class InviteService
     public function tree(User $user, int $maxDepth = 3): array
     {
         $maxDepth = max(1, min($maxDepth, 10));
-        $this->syncFromSub2Api($user);
+        $this->refreshSub2ApiTeam($user);
 
         return [
             'root' => $this->treeNode($user, 0, $maxDepth),
@@ -132,7 +139,7 @@ class InviteService
 
     public function records(User $user, int $page = 1, int $pageSize = 20): array
     {
-        $root = $this->syncFromSub2Api($user);
+        $root = $this->refreshSub2ApiTeam($user);
         $page = max(1, $page);
         $pageSize = max(1, min($pageSize, 100));
         $prefix = trim((string) $root->path, '/').'/';
@@ -159,6 +166,8 @@ class InviteService
                     'level' => $level,
                     'totalPaidAmount' => $this->money(0),
                     'totalRebateAmount' => $this->money(0),
+                    'rebateStatus' => (string) ($row->rebate_status ?? 'eligible'),
+                    'rebateDisabledReason' => $row->rebate_disabled_reason ?? null,
                     'boundAt' => $this->formatTime($row->updated_at),
                 ];
             })->all(),
@@ -236,6 +245,10 @@ class InviteService
             return $ref;
         }
 
+        if ($ref->parent_user_id !== null) {
+            return $ref;
+        }
+
         $parent = User::query()->find((int) $parentId);
         if (! $parent instanceof User) {
             $sub2Parent = $this->sub2User((int) $parentId);
@@ -274,9 +287,84 @@ class InviteService
                 'updated_at' => now(),
             ]);
 
+        $parent->forceFill([
+            'last_invited_at' => now(),
+        ])->save();
+
         $this->refreshChildren((int) $user->id, $newPath, $newDepth);
 
         return DB::table('referral_paths')->where('user_id', $user->id)->first();
+    }
+
+    public function refreshSub2ApiTeam(User $user): stdClass
+    {
+        if ($this->sub2User((int) $user->id) === null) {
+            return $this->syncFromSub2Api($user);
+        }
+
+        $root = $this->syncFromSub2Api($user);
+        $this->syncSub2ApiChildren($user, [(int) $user->id]);
+        $prefix = trim((string) $root->path, '/').'/';
+
+        $rows = DB::table('referral_paths')
+            ->where('path', 'like', $prefix.'%')
+            ->orderByDesc('depth')
+            ->get(['user_id']);
+
+        foreach ($rows as $row) {
+            $id = (int) $row->user_id;
+            $status = $this->sub2UserStatus($id);
+            if ($status instanceof Sub2ApiUserData) {
+                $child = User::query()->find($id);
+                if ($child instanceof User) {
+                    $this->syncFromSub2Api($child);
+                }
+                continue;
+            }
+
+            if ($status === self::SUB2API_MISSING) {
+                $this->detachReferralBranch($id);
+            }
+        }
+
+        return DB::table('referral_paths')->where('user_id', $user->id)->first() ?? $root;
+    }
+
+    /**
+     * @param array<int> $seen
+     */
+    private function syncSub2ApiChildren(User $user, array $seen): void
+    {
+        if (count($seen) >= 50) {
+            return;
+        }
+
+        try {
+            $children = $this->sub2Users->childrenOf((int) $user->id);
+        } catch (Throwable) {
+            return;
+        }
+
+        foreach ($children as $childData) {
+            if (in_array($childData->id, $seen, true)) {
+                continue;
+            }
+
+            $child = User::query()->updateOrCreate(
+                ['id' => $childData->id],
+                [
+                    'username' => $childData->username,
+                    'email' => $childData->email,
+                    'role' => in_array($childData->role, ['user', 'admin'], true) ? $childData->role : 'user',
+                    'status' => $childData->status,
+                    'sub2api_aff_code' => $childData->affCode,
+                    'sub2api_inviter_id' => $childData->inviterId,
+                ]
+            );
+
+            $this->syncFromSub2Api($child, $seen);
+            $this->syncSub2ApiChildren($child, [...$seen, $childData->id]);
+        }
     }
 
     public function ancestorIds(User $user): array
@@ -288,6 +376,36 @@ class InviteService
         return array_reverse($ids);
     }
 
+    public function rebateAncestors(User $user): array
+    {
+        $ids = $this->ancestorIds($user);
+        if ($ids === []) {
+            return [];
+        }
+
+        $users = User::query()
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        $rows = [];
+        foreach ($ids as $index => $id) {
+            $ancestor = $users->get($id);
+            if (! $ancestor instanceof User) {
+                continue;
+            }
+
+            $rows[] = [
+                'user_id' => (int) $ancestor->id,
+                'level' => $index + 1,
+                'rebate_status' => (string) ($ancestor->rebate_status ?: 'eligible'),
+                'rebate_disabled_reason' => $ancestor->rebate_disabled_reason,
+            ];
+        }
+
+        return $rows;
+    }
+
     private function treeNode(User $user, int $level, int $maxDepth): array
     {
         $node = [
@@ -295,6 +413,8 @@ class InviteService
             'username' => (string) ($user->username ?: $user->email ?: 'user_'.$user->id),
             'nickname' => (string) ($user->username ?: $user->email ?: 'user_'.$user->id),
             'level' => $level,
+            'rebateStatus' => (string) ($user->rebate_status ?: 'eligible'),
+            'rebateDisabledReason' => $user->rebate_disabled_reason,
             'children' => [],
         ];
 
@@ -352,6 +472,20 @@ class InviteService
         }
     }
 
+    private function detachReferralBranch(int $rootId): void
+    {
+        $root = DB::table('referral_paths')->where('user_id', $rootId)->first();
+        if ($root === null) {
+            return;
+        }
+
+        $prefix = trim((string) $root->path, '/').'/';
+        DB::table('referral_paths')
+            ->where('path', 'like', $prefix.'%')
+            ->orWhere('user_id', $rootId)
+            ->delete();
+    }
+
     private function directCount(int $userId): int
     {
         return DB::table('referral_paths')
@@ -404,10 +538,17 @@ class InviteService
 
     private function sub2User(int $id): ?Sub2ApiUserData
     {
+        $status = $this->sub2UserStatus($id);
+
+        return $status instanceof Sub2ApiUserData ? $status : null;
+    }
+
+    private function sub2UserStatus(int $id): Sub2ApiUserData|string
+    {
         try {
-            return $this->sub2Users->findById($id);
+            return $this->sub2Users->findById($id) ?? self::SUB2API_MISSING;
         } catch (Throwable) {
-            return null;
+            return self::SUB2API_ERROR;
         }
     }
 

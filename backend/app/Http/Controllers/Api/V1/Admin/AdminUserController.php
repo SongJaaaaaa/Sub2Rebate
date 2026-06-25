@@ -27,6 +27,7 @@ class AdminUserController extends Controller
     {
         [$page, $pageSize] = $this->pageParams((int) $request->integer('page', 1), (int) $request->integer('pageSize', 20));
         $keyword = trim($request->string('keyword')->toString());
+        $rebateStatus = trim($request->string('rebateStatus', $request->string('rebate_status')->toString())->toString());
 
         $query = User::query();
         if ($keyword !== '') {
@@ -36,6 +37,9 @@ class AdminUserController extends Controller
                     ->orWhere('email', 'like', $like)
                     ->orWhere('id', $keyword);
             });
+        }
+        if (in_array($rebateStatus, ['eligible', 'disabled'], true)) {
+            $query->where('rebate_status', $rebateStatus);
         }
 
         $total = (clone $query)->count();
@@ -129,6 +133,9 @@ class AdminUserController extends Controller
             'avatar' => '',
             'role' => (string) $user->role,
             'status' => (string) $user->status,
+            'rebateStatus' => (string) ($user->rebate_status ?: 'eligible'),
+            'rebateDisabledReason' => $user->rebate_disabled_reason,
+            'rebateDisabledAt' => $this->time($user->rebate_disabled_at),
             'parentNickname' => $parent instanceof User ? $this->displayName($parent) : null,
             'directInviteCount' => DB::table('referral_paths')->where('parent_user_id', $user->id)->count(),
             'totalRebateAmount' => $this->money($balanceTotal),

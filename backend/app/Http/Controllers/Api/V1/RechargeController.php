@@ -57,6 +57,26 @@ class RechargeController extends Controller
         return ApiResponse::ok($result['order']);
     }
 
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $user = $this->user($request);
+        if ($user === null) {
+            return ApiResponse::fail(ApiError::UNAUTHENTICATED, '未登录', null, 401);
+        }
+
+        $order = RechargeOrder::query()->find($id);
+        if (! $order instanceof RechargeOrder) {
+            return ApiResponse::fail(ApiError::NOT_FOUND, '充值订单不存在', null, 404);
+        }
+
+        $result = $this->orders->show($user, $order);
+        if (! ($result['ok'] ?? false)) {
+            return ApiResponse::fail((int) $result['code'], (string) $result['message'], null, (int) $result['status']);
+        }
+
+        return ApiResponse::ok($result['order']);
+    }
+
     public function records(Request $request): JsonResponse
     {
         $user = $this->user($request);

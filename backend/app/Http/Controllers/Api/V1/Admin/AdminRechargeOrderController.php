@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Admin\Services\AdminRechargeOrderService;
 use App\Modules\Payment\Models\RechargeOrder;
+use App\Modules\Payment\Services\RechargeCallbackService;
 use App\Modules\Payment\Services\RechargeOrderService;
 use App\Support\ApiError;
 use App\Support\ApiResponse;
@@ -20,6 +21,7 @@ class AdminRechargeOrderController extends Controller
     public function __construct(
         private readonly AdminRechargeOrderService $adminOrders,
         private readonly RechargeOrderService $orders,
+        private readonly RechargeCallbackService $callbacks,
     ) {
     }
 
@@ -52,6 +54,21 @@ class AdminRechargeOrderController extends Controller
     public function reject(Request $request, int $id): JsonResponse
     {
         return $this->operate($request, $id, 'reject');
+    }
+
+    public function retryCredit(Request $request, int $id): JsonResponse
+    {
+        $order = RechargeOrder::query()->find($id);
+        if (! $order instanceof RechargeOrder) {
+            return ApiResponse::fail(ApiError::NOT_FOUND, '充值订单不存在', null, 404);
+        }
+
+        $result = $this->callbacks->retryCredit($order, $request->user());
+        if (! ($result['ok'] ?? false)) {
+            return ApiResponse::fail((int) $result['code'], (string) $result['message'], null, (int) $result['status']);
+        }
+
+        return ApiResponse::ok($this->recordPayload($result['order']->refresh()));
     }
 
     private function operate(Request $request, int $id, string $method): JsonResponse
