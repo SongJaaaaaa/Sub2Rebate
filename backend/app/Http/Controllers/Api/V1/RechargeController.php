@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Payment\Models\RechargeOrder;
+use App\Modules\Payment\Services\EpayPaymentService;
 use App\Modules\Payment\Services\RechargeOrderService;
 use App\Support\ApiError;
 use App\Support\ApiResponse;
@@ -16,7 +17,6 @@ class RechargeController extends Controller
     public function __construct(private readonly RechargeOrderService $orders)
     {
     }
-
     public function config(): JsonResponse
     {
         return ApiResponse::ok($this->orders->config());
@@ -55,6 +55,25 @@ class RechargeController extends Controller
         }
 
         return ApiResponse::ok($result['order']);
+    }
+
+    public function epayPay(Request $request, EpayPaymentService $epay): JsonResponse
+    {
+        $user = $this->user($request);
+        if ($user === null) {
+            return ApiResponse::fail(ApiError::UNAUTHENTICATED, '未登录', null, 401);
+        }
+
+        $result = $epay->createAndPay($user, $request->all());
+        if (! ($result['ok'] ?? false)) {
+            return ApiResponse::fail((int) $result['code'], (string) $result['message'], null, (int) $result['status']);
+        }
+
+        return ApiResponse::ok([
+            'order' => $result['order'],
+            'payType' => $result['payType'],
+            'payInfo' => $result['payInfo'],
+        ]);
     }
 
     public function records(Request $request): JsonResponse

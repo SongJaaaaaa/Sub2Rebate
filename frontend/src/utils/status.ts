@@ -22,6 +22,7 @@ const rechargeStatusMap: Record<RechargeStatus, StatusDisplay> = {
   pending: { text: '待支付', type: 'warning' },
   submitted: { text: '待审核', type: 'primary' },
   approved: { text: '已到账', type: 'success' },
+  paid: { text: '已到账', type: 'success' },
   rejected: { text: '已拒绝', type: 'danger' },
   expired: { text: '已过期', type: 'info' },
 }

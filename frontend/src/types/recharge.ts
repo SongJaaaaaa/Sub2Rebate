@@ -1,5 +1,5 @@
-export type RechargeChannel = 'alipay'
-export type RechargeStatus = 'pending' | 'submitted' | 'approved' | 'rejected' | 'expired'
+export type RechargeChannel = 'alipay' | 'epay'
+export type RechargeStatus = 'pending' | 'submitted' | 'approved' | 'rejected' | 'expired' | 'paid'
 
 export interface RechargeConfig {
   enabled: boolean
@@ -8,6 +8,7 @@ export interface RechargeConfig {
   displayName: string
   note: string
   expireMinutes: number
+  epayEnabled: boolean
 }
 
 export interface RechargeOrder {
@@ -37,6 +38,12 @@ export interface RechargeOrder {
 export interface CreateRechargeOrderReq {
   amount: string | number
   remark?: string
+}
+
+export interface EpayPayResult {
+  order: RechargeOrder
+  payType: string // qrcode / jump / urlscheme
+  payInfo: string // 二维码内容或跳转 URL
 }
 
 export interface SubmitRechargeOrderReq {

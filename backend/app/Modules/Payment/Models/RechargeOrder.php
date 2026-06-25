@@ -11,6 +11,7 @@ class RechargeOrder extends Model
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
     public const STATUS_EXPIRED = 'expired';
+    public const STATUS_PAID = 'paid'; // Epay 在线支付自动到账终态（区别于人工 approved）
 
     protected $fillable = [
         'user_id',
@@ -31,6 +32,10 @@ class RechargeOrder extends Model
         'remark',
         'review_remark',
         'rebate_event_id',
+        'pay_method',
+        'epay_trade_no',
+        'epay_paid_amount',
+        'notify_raw',
     ];
 
     protected function casts(): array
@@ -43,6 +48,8 @@ class RechargeOrder extends Model
             'user_id' => 'int',
             'reviewed_by' => 'int',
             'rebate_event_id' => 'int',
+            'epay_paid_amount' => 'decimal:6',
+            'notify_raw' => 'array',
         ];
     }
 }

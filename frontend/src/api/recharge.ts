@@ -1,7 +1,7 @@
 import { request } from '@/utils/request'
 import { useMock, delay } from '@/mocks'
 import type { ApiRes, PageRes } from '@/types/api'
-import type { RechargeConfig, RechargeOrder, AdminRechargeOrder, CreateRechargeOrderReq, SubmitRechargeOrderReq } from '@/types/recharge'
+import type { RechargeConfig, RechargeOrder, AdminRechargeOrder, CreateRechargeOrderReq, SubmitRechargeOrderReq, EpayPayResult } from '@/types/recharge'
 
 const calcBonus = (amount: number) => {
   if (amount >= 1000) return 120
@@ -18,6 +18,7 @@ const mockConfig: RechargeConfig = {
   displayName: '支付宝收款码',
   note: '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。',
   expireMinutes: 15,
+  epayEnabled: true,
 }
 
 const mockOrder = (amount: string | number): RechargeOrder => {
@@ -63,6 +64,24 @@ export const createRechargeOrder = async (data: CreateRechargeOrderReq): Promise
     return { code: 0, message: 'ok', data: mockOrder(data.amount) }
   }
   return request.post('/recharge/orders', data)
+}
+
+export const createEpayOrder = async (data: CreateRechargeOrderReq): Promise<ApiRes<EpayPayResult>> => {
+  if (useMock) {
+    await delay(400)
+    const order = mockOrder(data.amount)
+    order.channel = 'epay'
+    return {
+      code: 0,
+      message: 'ok',
+      data: {
+        order,
+        payType: 'qrcode',
+        payInfo: 'https://qr.alipay.com/mock-epay-' + order.orderNo,
+      },
+    }
+  }
+  return request.post('/recharge/epay/pay', data)
 }
 
 export const submitRechargeOrder = async (id: number, data: SubmitRechargeOrderReq): Promise<ApiRes<RechargeOrder>> => {

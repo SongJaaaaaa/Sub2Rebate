@@ -98,6 +98,15 @@ class DefaultConfig
                 'sort' => 91,
             ],
             [
+                'key' => 'payment.epay_enabled',
+                'group' => 'payment',
+                'name' => 'Epay在线支付开关',
+                'type' => 'bool',
+                'value' => false,
+                'tips' => '是否启用 Epay（当面付）在线支付通道，需在 .env 配置 EPAY_GATEWAY/PID/KEY',
+                'sort' => 95,
+            ],
+            [
                 'key' => 'payment.alipay_qr_url',
                 'group' => 'payment',
                 'name' => '支付宝二维码地址',

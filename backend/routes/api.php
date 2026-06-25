@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminUserController;
 use App\Http\Controllers\Api\V1\Admin\AdminWithdrawController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\Payment\EpayNotifyController;
 use App\Http\Controllers\Api\V1\PromotionController;
 use App\Http\Controllers\Api\V1\RechargeController;
 use App\Http\Controllers\Api\V1\RebateRecordController;
@@ -27,6 +28,10 @@ Route::prefix('v1')->group(function (): void {
 
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('api.v1.auth.login');
 
+    // Epay 当面付异步通知（公开、无需登录、Laravel12 api 路由天然免 CSRF）
+    Route::match(['get', 'post'], 'recharge/epay/notify', EpayNotifyController::class)
+        ->middleware('throttle:60,1')->name('api.v1.recharge.epay.notify');
+
     Route::middleware(['auth:sanctum', 'active.user'])->group(function (): void {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');
         Route::get('auth/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
@@ -37,6 +42,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('recharge/config', [RechargeController::class, 'config'])->name('api.v1.recharge.config');
         Route::post('recharge/orders', [RechargeController::class, 'create'])->name('api.v1.recharge.orders.create');
         Route::post('recharge/orders/{id}/submit', [RechargeController::class, 'submit'])->name('api.v1.recharge.orders.submit');
+        Route::post('recharge/epay/pay', [RechargeController::class, 'epayPay'])->middleware('throttle:30,1')->name('api.v1.recharge.epay.pay');
         Route::get('recharge/orders', [RechargeController::class, 'records'])->name('api.v1.recharge.orders');
         Route::get('invite/me', [InviteController::class, 'me'])->name('api.v1.invite.me');
         Route::post('invite/bind', [InviteController::class, 'bind'])->name('api.v1.invite.bind');

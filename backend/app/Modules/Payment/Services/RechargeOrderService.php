@@ -30,6 +30,7 @@ class RechargeOrderService
             'displayName' => $displayName,
             'note' => $note,
             'expireMinutes' => $expireMinutes,
+            'epayEnabled' => (bool) $this->configs->get('payment.epay_enabled', false),
         ];
     }
 
@@ -44,30 +45,49 @@ class RechargeOrderService
             return $this->fail('支付宝二维码未配置');
         }
 
-        $amount = $this->amount($data['amount'] ?? null);
+        $result = $this->createPendingOrder($user, $data['amount'] ?? null, 'alipay', (string) ($data['remark'] ?? ''));
+        if (! ($result['ok'] ?? false)) {
+            return $result;
+        }
+
+        return [
+            'ok' => true,
+            'order' => $this->payload($result['order'], $config),
+        ];
+    }
+
+    /**
+     * 创建一个待支付订单（通道无关），复用赠送/订单号/有效期逻辑。
+     * 供人工二维码通道与 Epay 在线支付通道共用，避免赠送规则重复实现。
+     *
+     * @return array{ok:bool, order?:RechargeOrder, code?:int, message?:string, status?:int}
+     */
+    public function createPendingOrder(User $user, mixed $amountInput, string $channel, string $remark = ''): array
+    {
+        $amount = $this->amount($amountInput);
         if ($amount < 10) {
             return $this->fail('最低充值金额为 10 元');
         }
 
         $bonus = $this->bonus($amount);
         $credit = $this->amount($amount + $bonus);
-        $expireAt = now()->addMinutes((int) $config['expireMinutes']);
+        $expireAt = now()->addMinutes((int) $this->config()['expireMinutes']);
 
         $order = RechargeOrder::query()->create([
             'user_id' => $user->id,
             'order_no' => $this->orderNo(),
-            'channel' => 'alipay',
+            'channel' => $channel,
             'amount' => $this->money($amount),
             'bonus_amount' => $this->money($bonus),
             'credit_amount' => $this->money($credit),
             'status' => RechargeOrder::STATUS_PENDING,
-            'remark' => trim((string) ($data['remark'] ?? '')),
+            'remark' => trim($remark),
             'expire_at' => $expireAt,
         ]);
 
         return [
             'ok' => true,
-            'order' => $this->payload($order, $config),
+            'order' => $order,
         ];
     }
 
