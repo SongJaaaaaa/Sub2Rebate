@@ -27,10 +27,27 @@ class AdminRechargeOrderController extends Controller
     {
         [$page, $pageSize] = $this->pageParams((int) $request->integer('page', 1), (int) $request->integer('pageSize', 20));
         $status = trim($request->string('status')->toString());
+        $channel = trim($request->string('channel')->toString());
+        $keyword = trim($request->string('keyword')->toString());
 
         $query = RechargeOrder::query();
         if ($status !== '') {
             $query->where('status', $status);
+        }
+        if ($channel !== '') {
+            $query->where('channel', $channel);
+        }
+        if ($keyword !== '') {
+            $userIds = User::query()
+                ->where('username', 'like', '%'.$keyword.'%')
+                ->orWhere('email', 'like', '%'.$keyword.'%')
+                ->pluck('id');
+
+            $query->where(function ($q) use ($keyword, $userIds): void {
+                $q->where('order_no', 'like', '%'.$keyword.'%')
+                    ->orWhere('epay_trade_no', 'like', '%'.$keyword.'%')
+                    ->orWhereIn('user_id', $userIds);
+            });
         }
 
         $total = (clone $query)->count();

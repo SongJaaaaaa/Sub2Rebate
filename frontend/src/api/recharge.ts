@@ -112,13 +112,13 @@ export const getRechargeOrders = async (page = 1, pageSize = 20, status?: string
   return request.get('/recharge/orders', { params: { page, pageSize, status } })
 }
 
-export const getAdminRechargeOrders = async (page = 1, pageSize = 20, status?: string): Promise<ApiRes<PageRes<AdminRechargeOrder>>> => {
+export const getAdminRechargeOrders = async (page = 1, pageSize = 20, status?: string, keyword?: string, channel?: string): Promise<ApiRes<PageRes<AdminRechargeOrder>>> => {
   if (useMock) {
     await delay()
     const list: AdminRechargeOrder[] = [{ ...mockOrder(500), id: 1, status: 'submitted', userId: 1001, username: 'user1', nickname: '用户1' }]
     return { code: 0, message: 'ok', data: { list, page, pageSize, total: list.length } }
   }
-  return request.get('/admin/recharge-orders', { params: { page, pageSize, status } })
+  return request.get('/admin/recharge-orders', { params: { page, pageSize, status, keyword, channel } })
 }
 
 export const approveRechargeOrder = async (id: number, remark: string): Promise<ApiRes<AdminRechargeOrder>> => {
