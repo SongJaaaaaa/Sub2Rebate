@@ -33,6 +33,7 @@ class EpayNotifyTest extends TestCase
             'order_no' => $order->order_no,
             'status' => RechargeOrder::STATUS_PAID,
             'epay_trade_no' => 'EPAY-TXN-1',
+            'sub2_balance_after' => '105.000000', // Sub2API 返回的新余额已记入付款日志
         ]);
         $this->assertDatabaseHas('rebate_events', [
             'user_id' => $user->id,

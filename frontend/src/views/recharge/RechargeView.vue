@@ -308,6 +308,10 @@ onUnmounted(() => stopPoll())
           <div class="flex justify-between"><span class="text-[var(--sr-muted)]">订单号</span><span class="font-mono text-xs">{{ curOrder.orderNo }}</span></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">状态</span><StatusTag :text="getRechargeStatus(curOrder.status).text" :type="getRechargeStatus(curOrder.status).type" /></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">到账额度</span><span class="font-bold text-green-600">¥{{ curOrder.creditAmount }}</span></div>
+          <div v-if="curOrder.sub2BalanceBefore != null && curOrder.sub2BalanceAfter != null" class="mt-2 flex justify-between border-t border-[var(--sr-border)] pt-2">
+            <span class="text-[var(--sr-muted)]">余额变化</span>
+            <span><span class="text-[var(--sr-muted)]">¥{{ curOrder.sub2BalanceBefore }}</span> → <span class="font-bold text-green-600">¥{{ curOrder.sub2BalanceAfter }}</span></span>
+          </div>
         </div>
         <div class="mt-6 flex justify-center gap-3">
           <el-button @click="reset">继续充值</el-button>
@@ -328,6 +332,18 @@ onUnmounted(() => stopPoll())
         </el-table-column>
         <el-table-column prop="creditAmount" label="到账额度" width="100">
           <template #default="{ row }">{{ money(row.creditAmount) }}</template>
+        </el-table-column>
+        <el-table-column label="充值前余额" width="110">
+          <template #default="{ row }">
+            <span v-if="row.sub2BalanceBefore != null">{{ money(row.sub2BalanceBefore) }}</span>
+            <span v-else class="text-[var(--sr-muted)]">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="充值后余额" width="110">
+          <template #default="{ row }">
+            <span v-if="row.sub2BalanceAfter != null" class="font-semibold text-green-600">{{ money(row.sub2BalanceAfter) }}</span>
+            <span v-else class="text-[var(--sr-muted)]">—</span>
+          </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">

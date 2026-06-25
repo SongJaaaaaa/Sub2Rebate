@@ -25,6 +25,10 @@ export interface RechargeOrder {
   remark: string
   reviewRemark: string
   rebateEventId: number | null
+  payMethod?: string
+  epayTradeNo?: string
+  sub2BalanceBefore?: string | null
+  sub2BalanceAfter?: string | null
   submittedAt: string
   reviewedAt: string
   paidAt: string

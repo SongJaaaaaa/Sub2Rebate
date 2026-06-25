@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Payment\Models\RechargeOrder;
 use App\Modules\Payment\Support\EpayGatewayConfig;
 use App\Modules\Payment\Support\EpaySignature;
+use App\Modules\Sub2Api\Services\Sub2ApiAdminClient;
 use App\Support\ApiError;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,7 @@ class EpayPaymentService
     public function __construct(
         private readonly RechargeOrderService $orders,
         private readonly EpayGatewayConfig $gateway,
+        private readonly Sub2ApiAdminClient $sub2Api,
     ) {
     }
 
@@ -46,6 +48,12 @@ class EpayPaymentService
 
         /** @var RechargeOrder $order */
         $order = $create['order'];
+
+        // 记录下单时 Sub2API 历史余额（best-effort，查失败不阻断下单）
+        $order->sub2_balance_before = $this->currentSub2Balance($order->user_id);
+        if ($order->sub2_balance_before !== null) {
+            $order->save();
+        }
 
         $params = $this->buildParams($order);
 
@@ -101,6 +109,23 @@ class EpayPaymentService
     private function money(mixed $value): string
     {
         return number_format((float) $value, 2, '.', '');
+    }
+
+    /**
+     * 查询 Sub2API 当前余额，失败返回 null（不阻断下单）。
+     */
+    private function currentSub2Balance(int $userId): ?string
+    {
+        try {
+            $res = $this->sub2Api->user($userId);
+            $balance = data_get($res, 'data.balance');
+
+            return $balance === null ? null : number_format((float) $balance, 6, '.', '');
+        } catch (\Throwable $e) {
+            Log::warning('epay.balance_before.query_failed', ['user' => $userId, 'error' => $e->getMessage()]);
+
+            return null;
+        }
     }
 
     private function fail(string $message): array

@@ -33,7 +33,7 @@ class EpaySettlementService
 
         // 1. Sub2API 加余额（按 idempotencyKey 幂等，与 approve 同键）
         try {
-            $this->sub2Api->updateUserBalance(
+            $balanceRes = $this->sub2Api->updateUserBalance(
                 $order->user_id,
                 (float) $order->credit_amount,
                 'add',
@@ -49,8 +49,12 @@ class EpaySettlementService
             ];
         }
 
+        // 加款后的新余额（Sub2API 返回），用于付款日志
+        $afterBalance = data_get($balanceRes, 'data.balance');
+        $afterBalance = $afterBalance === null ? null : number_format((float) $afterBalance, 6, '.', '');
+
         // 2. 事务：建返利事件 + 更新订单
-        return DB::transaction(function () use ($order, $sourceId, $epayTradeNo, $paidAmount, $payMethod, $rawNotify): array {
+        return DB::transaction(function () use ($order, $sourceId, $epayTradeNo, $paidAmount, $payMethod, $rawNotify, $afterBalance): array {
             $created = $this->recharges->createRechargeEvent([
                 'user_id' => $order->user_id,
                 'source_type' => 'sub2rebate.recharge_order',
@@ -75,6 +79,7 @@ class EpaySettlementService
             $order->pay_method = $payMethod;
             $order->epay_trade_no = $epayTradeNo;
             $order->epay_paid_amount = $paidAmount;
+            $order->sub2_balance_after = $afterBalance;
             $order->notify_raw = $rawNotify;
             $order->paid_at = now();
             $order->rebate_event_id = $created['rebateEvent']->id ?? null;

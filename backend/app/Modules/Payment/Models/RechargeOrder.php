@@ -35,6 +35,8 @@ class RechargeOrder extends Model
         'pay_method',
         'epay_trade_no',
         'epay_paid_amount',
+        'sub2_balance_before',
+        'sub2_balance_after',
         'notify_raw',
     ];
 
@@ -49,6 +51,8 @@ class RechargeOrder extends Model
             'reviewed_by' => 'int',
             'rebate_event_id' => 'int',
             'epay_paid_amount' => 'decimal:6',
+            'sub2_balance_before' => 'decimal:6',
+            'sub2_balance_after' => 'decimal:6',
             'notify_raw' => 'array',
         ];
     }
