@@ -13,9 +13,9 @@ class PaymentNotifyController extends Controller
     {
     }
 
-    public function alimpay(Request $request): Response
+    public function epay(Request $request): Response
     {
-        $result = $this->callbacks->handleAliMPay($request->all());
+        $result = $this->callbacks->handleEpay($request->all());
 
         return response((string) ($result['response'] ?? 'fail'), (int) ($result['status'] ?? 400))
             ->header('Content-Type', 'text/plain; charset=UTF-8');

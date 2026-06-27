@@ -21,7 +21,9 @@ const withdrawMap: Record<WithdrawStatus, StatusDisplay> = {
 const rechargeStatusMap: Record<RechargeStatus, StatusDisplay> = {
   pending: { text: '待支付', type: 'warning' },
   submitted: { text: '待审核', type: 'primary' },
+  paid: { text: '入账中', type: 'primary' },
   approved: { text: '已到账', type: 'success' },
+  failed: { text: '入账失败', type: 'danger' },
   rejected: { text: '已拒绝', type: 'danger' },
   expired: { text: '已过期', type: 'info' },
 }

@@ -9,10 +9,12 @@ export interface RebateRecordQuery {
   pageSize?: number
   type?: RebateType
   status?: RebateStatus
+  startDate?: string
+  endDate?: string
 }
 
 export const getRebateRecords = async (query: RebateRecordQuery = {}): Promise<ApiRes<PageRes<RebateRecord>>> => {
-  const { page = 1, pageSize = 20, type, status } = query
+  const { page = 1, pageSize = 20, type, status, startDate, endDate } = query
   if (useMock) {
     await delay()
     let list = [...mockRebateRecords]
@@ -20,5 +22,5 @@ export const getRebateRecords = async (query: RebateRecordQuery = {}): Promise<A
     if (status) list = list.filter((r) => r.status === status)
     return { code: 0, message: 'ok', data: { list, page, pageSize, total: list.length } }
   }
-  return request.get('/rebate/records', { params: { page, pageSize, type, status } })
+  return request.get('/rebate/records', { params: { page, pageSize, type, status, startDate, endDate } })
 }

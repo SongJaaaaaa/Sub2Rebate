@@ -30,7 +30,21 @@
 层级限制：无上限，按实际邀请链路所有上级计算（无限级金字塔）
 归一化：返利池全部分给有效上级，不留归平台
 贡献系数：第一版记录但不启用
+失效节点：不获得新返利；金额处理由配置决定
 ```
+
+失效节点配置：
+
+```text
+rebate.inactive_node_mode = platform
+```
+
+可选值：
+
+| 值 | 说明 |
+|---|---|
+| `platform` | 按原始层级计算，失效节点那一份不发，归平台保留 |
+| `exclude_recalculate` | 计算前排除失效节点，对剩余有效上级按衰减系数重新归一化 |
 
 ## 4. 衰减系数算法
 
@@ -72,6 +86,19 @@ final_amount_i = ideal_amount_i / sum(所有 ideal_amount) * rebate_pool
 final_amount_i = rebate_pool * weight_i / sum(所有有效上级 weight)
 ```
 
+失效节点存在时需要先按 `rebate.inactive_node_mode` 分支处理：
+
+```text
+platform:
+    使用完整结构链路计算每一级权重。
+    rebate_status = disabled 的节点金额不写返利流水，归平台。
+    其他有效节点仍保留原始层级。
+
+exclude_recalculate:
+    先过滤 rebate_status = disabled 的节点。
+    对剩余节点重新编号并重新归一化。
+```
+
 ## 6. 示例
 
 返利池 15 元，衰减系数 0.4，实际上级 3 级：
@@ -94,9 +121,11 @@ final_amount_i = rebate_pool * weight_i / sum(所有有效上级 weight)
 充值事件
 -> 判断里程碑是否结束
 -> 获取完整上级链路（所有上级，无层级上限）
+-> 读取失效节点处理配置
 -> 读取衰减系数配置
+-> 按配置处理返利失效节点
 -> 计算各级权重（weight_i = decay ^ (i-1)）
--> 归一化分配返利池
+-> 归一化分配返利池或保留失效节点份额归平台
 -> 写 rebate_records
 -> 更新 rebate_balances
 ```
@@ -118,6 +147,10 @@ final_amount_i = rebate_pool * weight_i / sum(所有有效上级 weight)
 ## 9. 待实现
 
 - 贡献系数字段预留。
+- 用户返利资格字段，例如 `rebate_status = eligible / disabled`。
+- `rebate.inactive_node_mode` 配置项和配置中心 Tooltip。
+- 多级返利对失效节点支持 `platform` 和 `exclude_recalculate` 两种模式。
+- A -> B -> C 中 B 返利失效的专项测试。
 - 队列/定时任务自动消费待处理 `rebate_events`。
 - 前台/后台返利流水查询接入真实数据。
 

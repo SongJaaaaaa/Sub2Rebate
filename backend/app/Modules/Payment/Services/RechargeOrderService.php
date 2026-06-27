@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Config\Services\ConfigService;
 use App\Modules\Payment\Models\RechargeOrder;
 use App\Support\ApiError;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Str;
 
@@ -13,39 +14,42 @@ class RechargeOrderService
 {
     public function __construct(
         private readonly ConfigService $configs,
-        private readonly AliMPayService $aliMPay,
+        private readonly EpayService $epay,
     ) {
     }
 
     public function config(): array
     {
-        $mode = trim((string) $this->configs->get('payment.mode', 'manual_qr'));
-        $mode = $mode === RechargeOrder::CHANNEL_ALIMPAY_QR ? RechargeOrder::CHANNEL_ALIMPAY_QR : 'manual_qr';
+        $rawMode = trim((string) $this->configs->get('payment.mode', 'manual_qr'));
+        $mode = in_array($rawMode, [RechargeOrder::CHANNEL_EPAY, 'alimpay_qr'], true)
+            ? RechargeOrder::CHANNEL_EPAY
+            : 'manual_qr';
         $enabled = (bool) $this->configs->get('payment.qr_enabled', true);
         $qrUrl = trim((string) $this->configs->get('payment.alipay_qr_url', ''));
         $displayName = trim((string) $this->configs->get('payment.alipay_display_name', ''));
         $note = trim((string) $this->configs->get('payment.qr_note', '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。'));
         $expireMinutes = max(1, (int) $this->configs->get('payment.order_expire_minutes', 15));
-        $alimpay = $this->aliMPay->config();
-        $channel = $mode === RechargeOrder::CHANNEL_ALIMPAY_QR
-            ? RechargeOrder::CHANNEL_ALIMPAY_QR
+        $epay = $this->epay->config();
+        $channel = $mode === RechargeOrder::CHANNEL_EPAY
+            ? RechargeOrder::CHANNEL_EPAY
             : RechargeOrder::CHANNEL_ALIPAY;
 
         return [
-            'enabled' => $mode === RechargeOrder::CHANNEL_ALIMPAY_QR ? $enabled && $alimpay['enabled'] : $enabled,
+            'enabled' => $mode === RechargeOrder::CHANNEL_EPAY ? $enabled && $epay['enabled'] : $enabled,
             'mode' => $mode,
             'channel' => $channel,
             'qrUrl' => $qrUrl,
-            'displayName' => $mode === RechargeOrder::CHANNEL_ALIMPAY_QR ? $alimpay['displayName'] : $displayName,
-            'note' => $mode === RechargeOrder::CHANNEL_ALIMPAY_QR ? '创建订单后将跳转到支付页面，支付成功后自动入账。' : $note,
+            'displayName' => $mode === RechargeOrder::CHANNEL_EPAY ? $epay['displayName'] : $displayName,
+            'note' => $mode === RechargeOrder::CHANNEL_EPAY ? '创建订单后将跳转到 Epay 支付页面，支付成功后自动入账。' : $note,
             'expireMinutes' => $expireMinutes,
-            'alimpay' => [
-                'enabled' => $alimpay['enabled'],
-                'displayName' => $alimpay['displayName'],
-                'gatewayUrl' => $alimpay['gatewayUrl'],
-                'notifyUrl' => $alimpay['notifyUrl'],
-                'returnUrl' => $alimpay['returnUrl'],
-                'pid' => $alimpay['pid'],
+            'epay' => [
+                'enabled' => $epay['enabled'],
+                'displayName' => $epay['displayName'],
+                'gatewayUrl' => $epay['gatewayUrl'],
+                'notifyUrl' => $epay['notifyUrl'],
+                'returnUrl' => $epay['returnUrl'],
+                'pid' => $epay['pid'],
+                'type' => $epay['type'],
             ],
         ];
     }
@@ -61,8 +65,8 @@ class RechargeOrderService
             return $this->fail('支付宝二维码未配置');
         }
 
-        if ($config['mode'] === RechargeOrder::CHANNEL_ALIMPAY_QR) {
-            $error = $this->aliMPay->canCreate();
+        if ($config['mode'] === RechargeOrder::CHANNEL_EPAY) {
+            $error = $this->epay->canCreate();
             if ($error !== null) {
                 return $this->fail($error);
             }
@@ -83,7 +87,7 @@ class RechargeOrderService
             'user_id' => $user->id,
             'order_no' => $orderNo,
             'channel' => $config['channel'],
-            'out_trade_no' => $config['mode'] === RechargeOrder::CHANNEL_ALIMPAY_QR ? $orderNo : null,
+            'out_trade_no' => $config['mode'] === RechargeOrder::CHANNEL_EPAY ? $orderNo : null,
             'subject' => $subject,
             'amount' => $this->money($amount),
             'bonus_amount' => $this->money($bonus),
@@ -94,9 +98,22 @@ class RechargeOrderService
             'expire_at' => $expireAt,
         ]);
 
-        if ($config['mode'] === RechargeOrder::CHANNEL_ALIMPAY_QR) {
-            $order->pay_url = $this->aliMPay->payUrl($order);
-            $order->channel_config_snapshot = $this->aliMPay->snapshot();
+        if ($config['mode'] === RechargeOrder::CHANNEL_EPAY) {
+            try {
+                $epayOrder = $this->epay->createOrder($order, request()->ip() ?: '127.0.0.1');
+            } catch (\Throwable $e) {
+                $order->status = RechargeOrder::STATUS_FAILED;
+                $order->credit_status = RechargeOrder::CREDIT_FAILED;
+                $order->credit_fail_msg = $e->getMessage();
+                $order->save();
+
+                return $this->fail($e->getMessage());
+            }
+
+            $order->pay_url = $epayOrder['payUrl'];
+            $order->provider_trade_no = $epayOrder['tradeNo'] ?: null;
+            $order->channel_config_snapshot = $this->epay->snapshot();
+            $order->notify_payload = ['epay_create' => $epayOrder['raw']];
             $order->save();
         }
 
@@ -121,8 +138,8 @@ class RechargeOrderService
             return $this->fail('当前订单状态不能提交支付');
         }
 
-        if ($order->channel === RechargeOrder::CHANNEL_ALIMPAY_QR) {
-            return $this->fail('扫码支付订单会自动回调入账，无需提交付款信息');
+        if ($order->channel === RechargeOrder::CHANNEL_EPAY) {
+            return $this->fail('Epay 订单会自动回调入账，无需提交付款信息');
         }
 
         if ($order->expire_at instanceof CarbonInterface && $order->expire_at->isPast()) {
@@ -151,7 +168,7 @@ class RechargeOrderService
         ];
     }
 
-    public function list(User $user, int $page = 1, int $pageSize = 20, string $status = ''): array
+    public function list(User $user, int $page = 1, int $pageSize = 20, string $status = '', string $startDate = '', string $endDate = ''): array
     {
         $page = max(1, $page);
         $pageSize = max(1, min($pageSize, 100));
@@ -159,6 +176,12 @@ class RechargeOrderService
         $query = RechargeOrder::query()->where('user_id', $user->id);
         if ($status !== '') {
             $query->where('status', $status);
+        }
+        if ($startDate !== '') {
+            $query->where('created_at', '>=', CarbonImmutable::parse($startDate, 'Asia/Shanghai')->startOfDay());
+        }
+        if ($endDate !== '') {
+            $query->where('created_at', '<=', CarbonImmutable::parse($endDate, 'Asia/Shanghai')->endOfDay());
         }
 
         $total = (clone $query)->count();
@@ -205,6 +228,8 @@ class RechargeOrderService
             'bonusAmount' => $this->money2($order->bonus_amount),
             'creditAmount' => $this->money2($order->credit_amount),
             'paidAmount' => $order->paid_amount === null ? '' : $this->money2($order->paid_amount),
+            'sub2BalanceBefore' => $order->sub2_balance_before === null ? '' : $this->money2($order->sub2_balance_before),
+            'sub2BalanceAfter' => $order->sub2_balance_after === null ? '' : $this->money2($order->sub2_balance_after),
             'status' => $order->status,
             'tradeStatus' => (string) ($order->trade_status ?? ''),
             'creditStatus' => (string) ($order->credit_status ?? RechargeOrder::CREDIT_PENDING),
@@ -223,7 +248,7 @@ class RechargeOrderService
             'createdAt' => $this->time($order->created_at),
             'payUrl' => (string) ($order->pay_url ?? ''),
             'qrUrl' => $config['qrUrl'],
-            'displayName' => $order->channel === RechargeOrder::CHANNEL_ALIMPAY_QR ? '商家' : $config['displayName'],
+            'displayName' => $order->channel === RechargeOrder::CHANNEL_EPAY ? $config['displayName'] : $config['displayName'],
             'note' => $config['note'],
         ];
     }

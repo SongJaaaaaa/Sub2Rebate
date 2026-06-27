@@ -204,6 +204,22 @@ Accept: application/json
 | available | 可提现 |
 | canceled | 已取消 |
 
+### 2.3A 用户返利资格
+
+| 值 | 说明 |
+|---|---|
+| eligible | 可获得新返利 |
+| disabled | 不可获得新返利，但不代表禁止登录 |
+
+说明：账号登录状态仍由 `users.status` 控制；返利资格用于邀请树置灰和返利计算。
+
+### 2.3B 失效节点返利处理模式
+
+| 值 | 说明 |
+|---|---|
+| platform | 失效节点对应返利不发放，归平台保留 |
+| exclude_recalculate | 排除失效节点后，对剩余有效上级按衰减系数重算 |
+
 ### 2.4 提现状态
 
 | 值 | 说明 |
@@ -600,6 +616,8 @@ GET /api/v1/invite/tree?maxDepth=3
           "username": "child",
           "nickname": "下级用户",
           "level": 1,
+          "rebateStatus": "eligible",
+          "nodeState": "active",
           "children": []
         }
       ]
@@ -609,6 +627,8 @@ GET /api/v1/invite/tree?maxDepth=3
 ```
 
 当前后端已实现 `maxDepth` 裁剪，第一版用户端只能以当前登录用户为根节点查看自己的下级树。
+
+待实现：节点需补充 `rebateStatus` 和 `nodeState`，用于管理端邀请树置灰；用户端可默认只按有效节点展示统计。
 
 ### 8.4 邀请记录
 
@@ -1065,7 +1085,8 @@ GET /api/v1/config/items
         "pool_ratio": "0.15",
         "mode": "decay",
         "decay_factor": "0.4",
-        "normalize": true
+        "normalize": true,
+        "inactive_node_mode": "platform"
       },
       "payment": {
         "cny_to_credit_rate": "1"

@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('rebate:process-pending --limit=100')->everyMinute()->withoutOverlapping();
         $schedule->command('rebate:check-lie-flat-users --limit=500')->dailyAt('03:20')->withoutOverlapping();
+        $schedule->command('withdraw:process-auto-payout')->everyFiveMinutes()->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => null);

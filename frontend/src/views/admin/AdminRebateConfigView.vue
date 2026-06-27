@@ -11,10 +11,10 @@ const saving = ref(false)
 const activeSection = ref('milestone')
 
 const config = reactive<FullRebateConfig>({
-  milestone: { threshold: '100', reward: '5.00', maxTimes: 3 },
-  multiLevel: { enabled: true, totalPoolRate: '15', decayCoefficient: '0.5', maxDepth: 5 },
-  withdrawLimit: { minAmount: '100.00', cooldownHours: 24 },
-  riskControl: { blacklistEnabled: true, autoFreezeThreshold: 50 },
+  milestone: { threshold: '100', reward: '15.00', maxTimes: 2 },
+  multiLevel: { enabled: true, totalPoolRate: '15', decayCoefficient: '0.4', maxDepth: 5, inactiveNodeMode: 'platform' },
+  withdrawLimit: { minAmount: '100.00', cooldownHours: 24, dailyLimit: 1 },
+  riskControl: { blacklistEnabled: true, autoFreezeThreshold: 50, lieFlatEnabled: true, lieFlatDays: 7, lieFlatRestoreMinRecharge: '10' },
   lastModifiedBy: '',
   lastModifiedAt: '',
 })
@@ -214,6 +214,19 @@ onMounted(() => fetchConfig())
           </el-select>
         </div>
 
+        <div class="mt-4">
+          <label class="mb-1 flex items-center gap-1 text-sm font-semibold text-[var(--sr-muted)]">
+            失效节点返利处理方式
+            <el-tooltip placement="top" content="归平台：失效节点那份不发，也不会转给其他上级；排除后重算：跳过失效节点并按剩余有效上级重新归一化。">
+              <el-icon class="cursor-help text-blue-400" :size="14"><InfoFilled /></el-icon>
+            </el-tooltip>
+          </label>
+          <el-radio-group v-model="config.multiLevel.inactiveNodeMode">
+            <el-radio-button label="platform">归平台</el-radio-button>
+            <el-radio-button label="exclude_recalculate">排除后重算</el-radio-button>
+          </el-radio-group>
+        </div>
+
         <!-- 计算结果示例 -->
         <div class="mt-4 rounded-lg border border-[var(--sr-border)] bg-[var(--sr-surface)] p-4">
           <p class="mb-3 text-sm font-bold">实时预览（基于当前配置，充值100元时各层级分得金额）：</p>
@@ -261,6 +274,16 @@ onMounted(() => fetchConfig())
             <el-input-number v-model="config.withdrawLimit.cooldownHours" :min="1" :max="168" />
             <span class="ml-2 text-xs text-[var(--sr-muted)]">小时</span>
           </div>
+          <div>
+            <label class="mb-1 flex items-center gap-1 text-sm font-semibold text-[var(--sr-muted)]">
+              每日提现次数
+              <el-tooltip placement="top" content="同一用户每天最多能提现几次。默认 1 次。">
+                <el-icon class="cursor-help text-blue-400" :size="14"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </label>
+            <el-input-number v-model="config.withdrawLimit.dailyLimit" :min="1" :max="100" />
+            <span class="ml-2 text-xs text-[var(--sr-muted)]">次</span>
+          </div>
         </div>
 
         <div class="mt-4 rounded-lg bg-gray-50 p-3">
@@ -305,6 +328,37 @@ onMounted(() => fetchConfig())
             <span class="text-xs text-[var(--sr-muted)]">次/小时</span>
           </div>
           <p class="mt-1 text-xs text-orange-600">⚠ 达到阈值后账号立即锁定，所有返利和提现冻结，需人工审核解除。</p>
+        </div>
+
+        <div class="mt-4 rounded-lg border border-[var(--sr-border)] p-4">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-1 text-sm font-bold">
+                防躺平检测
+                <el-tooltip placement="top" content="开启后，连续指定天数无充值、余额无减少、无新增下级的用户会被置灰并暂停获得新返利；后续有充值会自动恢复。">
+                  <el-icon class="cursor-help text-blue-400" :size="14"><InfoFilled /></el-icon>
+                </el-tooltip>
+              </div>
+              <div class="text-xs text-[var(--sr-muted)]">余额变化只用于判断活跃度，不作为自动发放返利的依据</div>
+            </div>
+            <el-switch v-model="config.riskControl.lieFlatEnabled" />
+          </div>
+          <div class="mt-4 flex items-center gap-2">
+            <span class="text-sm font-semibold text-[var(--sr-muted)]">连续无活跃天数</span>
+            <el-input-number v-model="config.riskControl.lieFlatDays" :min="1" :max="365" :disabled="!config.riskControl.lieFlatEnabled" />
+            <span class="text-xs text-[var(--sr-muted)]">天</span>
+          </div>
+          <div class="mt-4">
+            <label class="mb-1 flex items-center gap-1 text-sm font-semibold text-[var(--sr-muted)]">
+              置灰恢复最低充值金额
+              <el-tooltip placement="top" content="用户被防躺平置灰后，充值成功回调确认的单次金额必须大于等于该值才会恢复返利资格。余额监控只记录活跃，不恢复资格。默认10元。">
+                <el-icon class="cursor-help text-blue-400" :size="14"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </label>
+            <el-input v-model="config.riskControl.lieFlatRestoreMinRecharge" :disabled="!config.riskControl.lieFlatEnabled" placeholder="10">
+              <template #suffix><span class="text-xs text-[var(--sr-muted)]">元</span></template>
+            </el-input>
+          </div>
         </div>
       </AppCard>
 

@@ -17,6 +17,12 @@ export interface Balance {
   withdrawnAmount: string
 }
 
+export interface Sub2ApiBalance {
+  currentAmount: string
+  afterAmount: string
+  totalChargedAmount: string
+}
+
 export interface LoginReq {
   account: string
   password: string
@@ -31,6 +37,7 @@ export interface LoginRes {
 export interface MeRes {
   user: User
   balance: Balance
+  sub2ApiBalance?: Sub2ApiBalance
 }
 
 export interface AccountProfile {
@@ -45,4 +52,5 @@ export interface AccountProfile {
     depth: number
   }
   balance: Balance
+  sub2ApiBalance?: Sub2ApiBalance
 }

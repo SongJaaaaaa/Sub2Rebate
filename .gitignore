@@ -44,5 +44,11 @@ docker-compose.override.yml
 # Logs
 *.log
 
+# Local runtime artifacts
+/.codex-runtime/
+/backend/database/*.sqlite.localbak-*
+
 # Local secrets
 服务器信息*.txt
+支付密钥信息/
+支付宝密钥信息/

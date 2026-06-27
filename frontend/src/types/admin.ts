@@ -1,9 +1,13 @@
 import type { User } from '@/types/user'
 import type { WithdrawRecord } from '@/types/withdraw'
+import type { EpayConfig, RechargeChannel, RechargeMode } from '@/types/recharge'
 
 // 管理端 — 用户管理
 export interface AdminUser extends User {
   status: 'active' | 'banned'
+  rebateStatus?: 'eligible' | 'disabled'
+  rebateDisabledReason?: string | null
+  rebateDisabledAt?: string
   parentNickname: string | null
   directInviteCount: number
   totalRebateAmount: string
@@ -21,12 +25,34 @@ export interface AdminWithdrawRecord extends WithdrawRecord {
 
 export interface AdminPaymentConfig {
   enabled: boolean
-  channel: 'alipay'
+  mode: RechargeMode
+  channel: RechargeChannel
   qrUrl: string
   displayName: string
   note: string
   expireMinutes: number
   creditRate: string
+  withdrawDailyLimit: number
+  epay: EpayConfig
+  alipayTransfer: AlipayTransferConfig
+}
+
+export interface AlipayTransferConfig {
+  enabled: boolean
+  autoPayEnabled: boolean
+  retryEnabled: boolean
+  retryIntervalMinutes: number
+  retryBatchSize: number
+  gatewayUrl: string
+  appId: string
+  privateKey?: string
+  hasPrivateKey?: boolean
+  alipayPublicKey?: string
+  hasAlipayPublicKey?: boolean
+  singleMaxAmount: string
+  dailyLimitAmount: string
+  identityType: 'ALIPAY_LOGON_ID' | 'ALIPAY_USER_ID'
+  orderTitle: string
 }
 
 // 管理端 — 返利配置（完整）
@@ -41,16 +67,21 @@ export interface MultiLevelConfig {
   totalPoolRate: string
   decayCoefficient: string
   maxDepth: number
+  inactiveNodeMode: 'platform' | 'exclude_recalculate'
 }
 
 export interface WithdrawLimitConfig {
   minAmount: string
   cooldownHours: number
+  dailyLimit: number
 }
 
 export interface RiskControlConfig {
   blacklistEnabled: boolean
   autoFreezeThreshold: number
+  lieFlatEnabled: boolean
+  lieFlatDays: number
+  lieFlatRestoreMinRecharge: string
 }
 
 export interface FullRebateConfig {
@@ -72,6 +103,9 @@ export interface RelationshipNode {
   totalRecharge: string
   directReferrals: number
   status: 'active' | 'banned' | 'warning'
+  rebateStatus?: 'eligible' | 'disabled'
+  rebateDisabledReason?: string | null
+  rebateDisabledAt?: string
   children?: RelationshipNode[]
 }
 

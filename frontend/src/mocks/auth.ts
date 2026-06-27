@@ -27,6 +27,12 @@ export const mockBalance: Balance = {
   withdrawnAmount: '500.00',
 }
 
+export const mockSub2ApiBalance = {
+  currentAmount: '300.00',
+  afterAmount: '300.00',
+  totalChargedAmount: '500.00',
+}
+
 export const mockLoginRes: LoginRes = {
   token: 'mock-token-sub2rebate-dev',
   tokenType: 'Bearer',
@@ -42,11 +48,13 @@ export const mockAdminLoginRes: LoginRes = {
 export const mockMeRes: MeRes = {
   user: mockUser,
   balance: mockBalance,
+  sub2ApiBalance: mockSub2ApiBalance,
 }
 
 export const mockAdminMeRes: MeRes = {
   user: mockAdminUser,
   balance: mockBalance,
+  sub2ApiBalance: mockSub2ApiBalance,
 }
 
 export const mockAccountProfile: AccountProfile = {
@@ -61,4 +69,5 @@ export const mockAccountProfile: AccountProfile = {
     depth: 2,
   },
   balance: mockBalance,
+  sub2ApiBalance: mockSub2ApiBalance,
 }

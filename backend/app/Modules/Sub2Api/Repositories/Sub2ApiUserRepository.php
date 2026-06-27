@@ -5,6 +5,7 @@ namespace App\Modules\Sub2Api\Repositories;
 use App\Modules\Sub2Api\DTO\Sub2ApiUserData;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class Sub2ApiUserRepository
 {
@@ -98,6 +99,10 @@ class Sub2ApiUserRepository
 
     private function db(): ConnectionInterface
     {
+        if ((string) config('database.connections.sub2api.password', '') === '') {
+            throw new RuntimeException('缺少 SUB2API_DB_PASSWORD');
+        }
+
         return DB::connection($this->connection);
     }
 }

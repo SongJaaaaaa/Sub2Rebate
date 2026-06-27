@@ -27,6 +27,7 @@ class AccountProfileService
         return [
             'user' => $profile['user'],
             'balance' => $profile['balance'],
+            'sub2ApiBalance' => $profile['sub2ApiBalance'],
         ];
     }
 
@@ -40,18 +41,21 @@ class AccountProfileService
 
         $ref = $this->invites->syncFromSub2Api($user);
 
+        $affCode = $sub2User?->affCode ?? (string) ($user->sub2api_aff_code ?? '');
+
         return [
             'user' => $this->userPayload($user, $sub2User),
             'invite' => [
                 'inviteCode' => '',
                 'inviteUrl' => '',
-                'sub2ApiAffCode' => $sub2User?->affCode ?? '',
-                'sub2ApiInviteUrl' => $this->makeUrl((string) config('sub2rebate.sub2api_invite_url_template'), $sub2User?->affCode ?? ''),
+                'sub2ApiAffCode' => $affCode,
+                'sub2ApiInviteUrl' => $this->makeUrl((string) config('sub2rebate.sub2api_invite_url_template'), $affCode),
                 'sub2ApiAffiliatePageUrl' => (string) config('sub2rebate.sub2api_affiliate_page_url'),
                 'parentNickname' => $this->parentNickname($ref),
                 'depth' => (int) $ref->depth,
             ],
-            'balance' => $this->emptyBalance(),
+            'balance' => $this->balancePayload($user),
+            'sub2ApiBalance' => $this->sub2ApiBalancePayload($sub2User),
         ];
     }
 
@@ -134,13 +138,30 @@ class AccountProfileService
         return str_replace('{code}', rawurlencode($code), $template);
     }
 
-    private function emptyBalance(): array
+    private function balancePayload(User $user): array
     {
+        $balance = DB::table('rebate_balances')->where('user_id', (int) $user->getKey())->first();
+        $available = (float) ($balance->available_amount ?? 0);
+        $frozen = (float) ($balance->frozen_amount ?? 0);
+        $withdrawn = (float) ($balance->withdrawn_amount ?? 0);
+
         return [
-            'availableAmount' => $this->money(0),
-            'frozenAmount' => $this->money(0),
-            'totalAmount' => $this->money(0),
-            'withdrawnAmount' => $this->money(0),
+            'availableAmount' => $this->money($available),
+            'frozenAmount' => $this->money($frozen),
+            'totalAmount' => $this->money($available + $frozen),
+            'withdrawnAmount' => $this->money($withdrawn),
+        ];
+    }
+
+    private function sub2ApiBalancePayload(?Sub2ApiUserData $sub2User): array
+    {
+        $balance = (float) ($sub2User?->balance ?? 0);
+        $charged = (float) ($sub2User?->totalRecharged ?? 0);
+
+        return [
+            'currentAmount' => $this->money($balance),
+            'afterAmount' => $this->money($balance),
+            'totalChargedAmount' => $this->money($charged),
         ];
     }
 

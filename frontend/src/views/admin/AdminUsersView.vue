@@ -13,6 +13,7 @@ import type { AdminUser, BalanceAdjustReq, BalanceAdjustRecord } from '@/types/a
 const users = ref<AdminUser[]>([])
 const loading = ref(false)
 const keyword = ref('')
+const rebateStatus = ref('')
 const pagination = ref({ page: 1, pageSize: 20, total: 0 })
 
 // 余额调整弹窗
@@ -33,7 +34,7 @@ const reasonOptions = ['手动补偿', '违规扣除', '活动奖励', '系统�
 const fetchUsers = async (page = 1) => {
   loading.value = true
   try {
-    const res = await getAdminUsers(page, pagination.value.pageSize, keyword.value || undefined)
+    const res = await getAdminUsers(page, pagination.value.pageSize, keyword.value || undefined, rebateStatus.value || undefined)
     if (res.code === 0) {
       users.value = res.data.list
       pagination.value.page = res.data.page
@@ -128,6 +129,11 @@ const getTagClass = (tagColor: string) => {
   return map[tagColor] || map.info
 }
 
+const rebateReason = (user: AdminUser) => {
+  if (user.rebateDisabledReason === 'lie_flat') return '防躺平：连续无活跃'
+  return user.rebateDisabledReason || '暂停获得新返利'
+}
+
 onMounted(() => fetchUsers())
 </script>
 
@@ -139,6 +145,10 @@ onMounted(() => fetchUsers())
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <el-input v-model="keyword" placeholder="搜索用户名/昵称" clearable :prefix-icon="Search" style="width: 240px" @keyup.enter="onSearch" />
+          <el-select v-model="rebateStatus" clearable placeholder="返利资格" style="width: 140px" @change="onSearch">
+            <el-option label="正常" value="eligible" />
+            <el-option label="已失效" value="disabled" />
+          </el-select>
           <el-button type="primary" @click="onSearch">搜索</el-button>
         </div>
         <span class="text-xs text-[var(--sr-muted)]">提示：封禁用户后其所有返利和提现功能将被冻结</span>
@@ -180,6 +190,13 @@ onMounted(() => fetchUsers())
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
             <StatusTag :text="row.status === 'active' ? '正常' : '封禁'" :type="row.status === 'active' ? 'success' : 'danger'" />
+          </template>
+        </el-table-column>
+        <el-table-column label="返利资格" width="110">
+          <template #default="{ row }">
+            <el-tooltip :content="row.rebateStatus === 'disabled' ? rebateReason(row) : '可获得新返利'" placement="top">
+              <StatusTag :text="row.rebateStatus === 'disabled' ? '已失效' : '正常'" :type="row.rebateStatus === 'disabled' ? 'info' : 'success'" />
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column prop="role" label="角色" width="80">

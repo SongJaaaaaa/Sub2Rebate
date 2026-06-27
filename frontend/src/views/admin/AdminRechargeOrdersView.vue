@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import AppCard from '@/components/common/AppCard.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
-import { getAdminRechargeOrders, approveRechargeOrder, rejectRechargeOrder } from '@/api/recharge'
+import { getAdminRechargeOrders, approveRechargeOrder, rejectRechargeOrder, retryRechargeCredit } from '@/api/recharge'
 import { money } from '@/utils/money'
 import { getRechargeStatus } from '@/utils/status'
 import type { AdminRechargeOrder } from '@/types/recharge'
@@ -18,6 +18,8 @@ const opts = [
   { label: '全部', value: '' },
   { label: '待支付', value: 'pending' },
   { label: '待审核', value: 'submitted' },
+  { label: '入账中', value: 'paid' },
+  { label: '入账失败', value: 'failed' },
   { label: '已到账', value: 'approved' },
   { label: '已拒绝', value: 'rejected' },
   { label: '已过期', value: 'expired' },
@@ -64,27 +66,42 @@ const onReject = async (row: AdminRechargeOrder) => {
   }
 }
 
+const onRetry = async (row: AdminRechargeOrder) => {
+  const res = await retryRechargeCredit(row.id)
+  if (res.code === 0) {
+    await fetchList(pagination.value.page)
+    ElMessage.success('已重试入账')
+  }
+}
+
 onMounted(() => fetchList())
 </script>
 
 <template>
   <div class="space-y-6">
-    <PageHeader title="充值审核" description="审核支付宝二维码充值订单，确认到账后自动增加 API 额度并生成返利事件。" />
+    <PageHeader title="充值审核" description="审核手工二维码充值订单，查看 Epay 自动回调订单并处理入账失败。" />
 
     <AppCard>
       <div class="mb-4 flex items-center justify-between gap-3">
         <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 160px" @change="() => fetchList(1)">
           <el-option v-for="opt in opts" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
-        <span class="text-xs text-[var(--sr-muted)]">用户提交付款信息后，管理员核对支付宝收款记录再确认到账。</span>
+        <span class="text-xs text-[var(--sr-muted)]">手工二维码需要审核；Epay 支付成功会自动回调入账。</span>
       </div>
 
       <el-table :data="rows" style="width: 100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="nickname" label="用户" min-width="100" />
         <el-table-column prop="orderNo" label="订单号" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="outTradeNo" label="支付单号" min-width="170" show-overflow-tooltip />
+        <el-table-column prop="channel" label="通道" width="110">
+          <template #default="{ row }">{{ row.channel === 'epay' ? 'Epay' : '支付宝' }}</template>
+        </el-table-column>
         <el-table-column prop="amount" label="实付" width="100">
           <template #default="{ row }">{{ money(row.amount) }}</template>
+        </el-table-column>
+        <el-table-column prop="paidAmount" label="到账金额" width="100">
+          <template #default="{ row }">{{ row.paidAmount ? money(row.paidAmount) : '-' }}</template>
         </el-table-column>
         <el-table-column prop="creditAmount" label="到账额度" width="100">
           <template #default="{ row }">{{ money(row.creditAmount) }}</template>
@@ -97,12 +114,17 @@ onMounted(() => fetchList())
           </template>
         </el-table-column>
         <el-table-column prop="submittedAt" label="提交时间" width="160" />
+        <el-table-column prop="paidAt" label="支付时间" width="160" />
+        <el-table-column prop="creditFailMsg" label="失败原因" min-width="180" show-overflow-tooltip />
         <el-table-column prop="reviewRemark" label="审核备注" min-width="160" show-overflow-tooltip />
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="190" fixed="right">
           <template #default="{ row }">
             <template v-if="row.status === 'submitted'">
               <el-button type="success" text size="small" @click="onApprove(row)">确认到账</el-button>
               <el-button type="danger" text size="small" @click="onReject(row)">拒绝</el-button>
+            </template>
+            <template v-else-if="row.channel === 'epay' && row.creditStatus === 'failed'">
+              <el-button type="primary" text size="small" @click="onRetry(row)">重试入账</el-button>
             </template>
             <span v-else class="text-xs text-[var(--sr-muted)]">—</span>
           </template>

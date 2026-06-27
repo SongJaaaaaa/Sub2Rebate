@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { DocumentCopy } from '@element-plus/icons-vue'
+import { DocumentCopy, Refresh } from '@element-plus/icons-vue'
 import AppCard from '@/components/common/AppCard.vue'
 import MetricCard from '@/components/common/MetricCard.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { usePromotionStore } from '@/stores/promotion'
+import { useAuthStore } from '@/stores/auth'
 import { money } from '@/utils/money'
 import { getRebateTypeText, getRebateStatusDisplay } from '@/utils/status'
 import { getRebateRecords } from '@/api/promotion'
 import type { RebateRecord } from '@/types/rebate'
 
 const promotion = usePromotionStore()
+const auth = useAuthStore()
 const copied = ref(false)
 const activeTab = ref('invites')
+const refreshing = ref(false)
 
 // 返利记录
 const rebateRecords = ref<RebateRecord[]>([])
@@ -53,35 +56,49 @@ const fetchRebateRecords = async (page = 1) => {
   }
 }
 
-const handleInvitePageChange = (page: number) => {
+const handleInvitePageChange = async (page: number) => {
   invitePagination.value.page = page
-  promotion.fetchInviteRecords(page, invitePagination.value.pageSize)
+  await promotion.fetchInviteRecords(page, invitePagination.value.pageSize)
+  invitePagination.value.total = promotion.inviteTotal
 }
 
-const handleConversionPageChange = (page: number) => {
+const handleConversionPageChange = async (page: number) => {
   conversionPagination.value.page = page
-  promotion.fetchConversions(page, conversionPagination.value.pageSize)
+  await promotion.fetchConversions(page, conversionPagination.value.pageSize)
+  conversionPagination.value.total = promotion.conversionTotal
 }
 
 const handleRebatePageChange = (page: number) => {
   fetchRebateRecords(page)
 }
 
-onMounted(async () => {
-  await Promise.all([
-    promotion.fetchSummary(),
-    promotion.fetchConversions(),
-    promotion.fetchInviteRecords(),
-    fetchRebateRecords(),
-  ])
-  invitePagination.value.total = promotion.inviteRecords.length
-  conversionPagination.value.total = promotion.conversions.length
-})
+const refreshPage = async () => {
+  refreshing.value = true
+  try {
+    await Promise.all([
+      auth.fetchMe(),
+      promotion.fetchSummary(),
+      promotion.fetchConversions(conversionPagination.value.page, conversionPagination.value.pageSize),
+      promotion.fetchInviteRecords(invitePagination.value.page, invitePagination.value.pageSize),
+      fetchRebateRecords(rebatePagination.value.page),
+    ])
+    invitePagination.value.total = promotion.inviteTotal
+    conversionPagination.value.total = promotion.conversionTotal
+  } finally {
+    refreshing.value = false
+  }
+}
+
+onMounted(() => refreshPage())
 </script>
 
 <template>
   <div class="space-y-6">
-    <PageHeader title="推广中心" description="分享推广链接，邀请用户，获得多级返利。" />
+    <PageHeader title="推广中心" description="分享推广链接，邀请用户，获得多级返利。">
+      <template #actions>
+        <el-button :icon="Refresh" :loading="refreshing" @click="refreshPage">刷新</el-button>
+      </template>
+    </PageHeader>
 
     <!-- 推广链接 -->
     <AppCard>
@@ -89,10 +106,10 @@ onMounted(async () => {
         <div>
           <div class="text-xs font-semibold uppercase tracking-wide text-[var(--sr-muted)]">Sub2API 邀请链接</div>
           <div class="mt-3 break-all rounded-lg bg-[var(--sr-surface-low)] p-4 font-mono text-sm">
-            {{ promotion.summary?.sub2ApiInviteUrl || '加载中...' }}
+            {{ promotion.summary?.sub2ApiInviteUrl || (promotion.loading ? '加载中...' : '暂无 Sub2API 邀请链接') }}
           </div>
         </div>
-        <el-button type="primary" :icon="DocumentCopy" @click="copyLink">
+        <el-button type="primary" :icon="DocumentCopy" :disabled="!promotion.summary?.sub2ApiInviteUrl" @click="copyLink">
           {{ copied ? '已复制' : '复制链接' }}
         </el-button>
       </div>
@@ -102,7 +119,8 @@ onMounted(async () => {
     </AppCard>
 
     <!-- 指标 -->
-    <div v-if="promotion.summary" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div v-if="promotion.summary" class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <MetricCard label="可提现余额" :value="money(auth.balance?.availableAmount || '0')" hint="可发起提现" />
       <MetricCard label="直邀人数" :value="`${promotion.summary.directInviteCount}`" hint="直接推广" hint-type="muted" />
       <MetricCard label="团队人数" :value="`${promotion.summary.teamInviteCount}`" hint="含间接下级" hint-type="muted" />
       <MetricCard label="转化率" :value="`${(parseFloat(promotion.summary.conversionRate) * 100).toFixed(1)}%`" hint="付费用户占比" />

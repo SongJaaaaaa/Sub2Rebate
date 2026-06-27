@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Invite\Services\InviteService;
 use App\Modules\Sub2Api\DTO\Sub2ApiUserData;
 use App\Modules\Sub2Api\Repositories\Sub2ApiUserRepository;
+use App\Modules\Sub2Api\Services\Sub2ApiAdminClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -94,6 +95,36 @@ class InviteTest extends TestCase
             ->assertJsonPath('data.list.0.level', 1)
             ->assertJsonPath('data.list.1.id', 1003)
             ->assertJsonPath('data.list.1.level', 2);
+    }
+
+    public function test_invite_me_uses_sub2api_affiliate_overview_when_readonly_user_is_missing(): void
+    {
+        $this->fakeSub2Users([]);
+        $this->app->instance(Sub2ApiAdminClient::class, new class extends Sub2ApiAdminClient {
+            public function affiliateOverview(string|int $id): array
+            {
+                return [
+                    'code' => 0,
+                    'data' => [
+                        'user_id' => (int) $id,
+                        'aff_code' => 'OVERVIEW12',
+                    ],
+                ];
+            }
+        });
+
+        $user = $this->user(1101, 'overview', 'overview@example.com');
+
+        $this->actingAs($user)
+            ->getJson('/api/v1/invite/me')
+            ->assertOk()
+            ->assertJsonPath('data.sub2ApiAffCode', 'OVERVIEW12')
+            ->assertJsonPath('data.sub2ApiInviteUrl', 'https://api.sjiaa.cc.cd/register?aff=OVERVIEW12');
+
+        $this->assertDatabaseHas('users', [
+            'id' => 1101,
+            'sub2api_aff_code' => 'OVERVIEW12',
+        ]);
     }
 
     public function test_bind_rejects_self_invite_and_rebind(): void

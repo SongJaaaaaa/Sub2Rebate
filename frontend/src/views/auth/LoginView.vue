@@ -18,6 +18,13 @@ const rules: FormRules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
 
+const errMsg = (e: unknown) => {
+  const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+    || (e instanceof Error ? e.message : '')
+
+  return msg.includes('账号') && msg.includes('密码') ? '账号密码错误' : msg || '登录失败，请重试'
+}
+
 const onSubmit = async () => {
   if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
@@ -30,8 +37,7 @@ const onSubmit = async () => {
     const redirect = (route.query.redirect as string) || defaultPath
     await router.replace(redirect)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '登录失败，请重试'
-    ElMessage.error(msg)
+    ElMessage.error(errMsg(e))
   } finally {
     submitting.value = false
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { House, Promotion, Setting, Wallet, Connection, CreditCard } from '@element-plus/icons-vue'
+import { House, Promotion, Setting, Wallet, Connection, CreditCard, List } from '@element-plus/icons-vue'
 
 defineProps<{
   visible?: boolean
@@ -14,6 +14,7 @@ const items = [
   { path: '/promotion', text: '推广中心', icon: Promotion },
   { path: '/my-team', text: '我的团队', icon: Connection },
   { path: '/recharge', text: '额度充值', icon: CreditCard },
+  { path: '/rebate/records', text: '返利明细', icon: List },
   { path: '/withdraw', text: '提现管理', icon: Wallet },
   { path: '/account', text: '账户设置', icon: Setting },
 ]

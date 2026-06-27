@@ -18,6 +18,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'promotion', name: 'promotion', component: () => import('@/views/promotion/PromotionView.vue'), meta: { title: '推广中心' } },
       { path: 'my-team', name: 'my-team', component: () => import('@/views/promotion/MyRelationshipView.vue'), meta: { title: '我的团队' } },
       { path: 'recharge', name: 'recharge', component: () => import('@/views/recharge/RechargeView.vue'), meta: { title: '额度充值' } },
+      { path: 'rebate/records', name: 'rebate-records', component: () => import('@/views/rebate/RebateRecordsView.vue'), meta: { title: '返利明细' } },
       { path: 'withdraw', name: 'withdraw', component: () => import('@/views/withdraw/WithdrawView.vue'), meta: { title: '提现管理' } },
       { path: 'account', name: 'account', component: () => import('@/views/account/AccountView.vue'), meta: { title: '账户设置' } },
     ],

@@ -24,14 +24,15 @@ export const getAdminTrends = async (range = '7d'): Promise<ApiRes<{ items: Admi
 
 // ============ 用户管理 ============
 
-export const getAdminUsers = async (page = 1, pageSize = 20, keyword?: string): Promise<ApiRes<PageRes<AdminUser>>> => {
+export const getAdminUsers = async (page = 1, pageSize = 20, keyword?: string, rebateStatus?: string): Promise<ApiRes<PageRes<AdminUser>>> => {
   if (useMock) {
     await delay()
     let list = [...mockAdminUsers]
     if (keyword) list = list.filter((u) => u.username.includes(keyword) || u.nickname.includes(keyword))
+    if (rebateStatus) list = list.filter((u) => u.rebateStatus === rebateStatus)
     return { code: 0, message: 'ok', data: { list, page, pageSize, total: list.length } }
   }
-  return request.get('/admin/users', { params: { page, pageSize, keyword } })
+  return request.get('/admin/users', { params: { page, pageSize, keyword, rebateStatus } })
 }
 
 export const banUser = async (userId: number): Promise<ApiRes<null>> => {
@@ -70,40 +71,83 @@ export const getAdminWithdrawals = async (page = 1, pageSize = 20, status?: stri
   return request.get('/admin/withdrawals', { params: { page, pageSize, status } })
 }
 
-export const approveWithdraw = async (id: number): Promise<ApiRes<null>> => {
+export const approveWithdraw = async (id: number): Promise<ApiRes<AdminWithdrawRecord>> => {
   if (useMock) {
     await delay(400)
-    return { code: 0, message: 'ok', data: null }
+    const record = mockAdminWithdrawals.find((r) => r.id === id)
+    if (record) record.status = 'approved'
+    return { code: 0, message: 'ok', data: record as AdminWithdrawRecord }
   }
   return request.post(`/admin/withdrawals/${id}/approve`)
 }
 
-export const markPaid = async (id: number): Promise<ApiRes<null>> => {
+export const markPaid = async (id: number): Promise<ApiRes<AdminWithdrawRecord>> => {
   if (useMock) {
     await delay(400)
-    return { code: 0, message: 'ok', data: null }
+    const record = mockAdminWithdrawals.find((r) => r.id === id)
+    if (record) {
+      record.status = 'paid'
+      record.paidAt = new Date().toISOString().replace('T', ' ').slice(0, 19)
+    }
+    return { code: 0, message: 'ok', data: record as AdminWithdrawRecord }
   }
   return request.post(`/admin/withdrawals/${id}/paid`)
 }
 
-export const rejectWithdraw = async (id: number, reason: string): Promise<ApiRes<null>> => {
+export const rejectWithdraw = async (id: number, reason: string): Promise<ApiRes<AdminWithdrawRecord>> => {
   if (useMock) {
     await delay(400)
-    return { code: 0, message: 'ok', data: null }
+    const record = mockAdminWithdrawals.find((r) => r.id === id)
+    if (record) {
+      record.status = 'rejected'
+      record.rejectReason = reason
+    }
+    return { code: 0, message: 'ok', data: record as AdminWithdrawRecord }
   }
-  return request.post(`/admin/withdrawals/${id}/reject`, { reason })
+  return request.post(`/admin/withdrawals/${id}/reject`, { remark: reason })
 }
 
 // ============ 支付配置 ============
 
 const mockPaymentConfig: AdminPaymentConfig = {
   enabled: true,
+  mode: 'manual_qr',
   channel: 'alipay',
   qrUrl: 'https://via.placeholder.com/320x320.png?text=Alipay+QR',
   displayName: '支付宝收款码',
   note: '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。',
   expireMinutes: 15,
   creditRate: '1',
+  withdrawDailyLimit: 1,
+  epay: {
+    enabled: false,
+    pid: '',
+    key: '',
+    hasKey: false,
+    gatewayUrl: 'https://pay.sjiaa.cc.cd',
+    notifyUrl: '',
+    returnUrl: '',
+    displayName: 'Epay 当面付',
+    sitename: 'Sub2Rebate',
+    type: 'alipay',
+  },
+  alipayTransfer: {
+    enabled: false,
+    autoPayEnabled: false,
+    retryEnabled: false,
+    retryIntervalMinutes: 5,
+    retryBatchSize: 50,
+    gatewayUrl: 'https://openapi.alipay.com/gateway.do',
+    appId: '',
+    privateKey: '',
+    hasPrivateKey: false,
+    alipayPublicKey: '',
+    hasAlipayPublicKey: false,
+    singleMaxAmount: '500',
+    dailyLimitAmount: '5000',
+    identityType: 'ALIPAY_LOGON_ID',
+    orderTitle: '返利提现',
+  },
 }
 
 export const getAdminPaymentConfig = async (): Promise<ApiRes<AdminPaymentConfig>> => {
@@ -129,7 +173,44 @@ export const getFullRebateConfig = async (): Promise<ApiRes<FullRebateConfig>> =
     await delay()
     return { code: 0, message: 'ok', data: mockFullRebateConfig }
   }
-  return request.get('/admin/rebate-config')
+  const res = await request.get('/admin/rebate-config') as ApiRes<{ values: Record<string, any> }>
+  const values = res.data.values || {}
+  const rebate = values.rebate || {}
+  const milestone = values.milestone || {}
+  const withdraw = values.withdraw || {}
+  const risk = values.risk || {}
+
+  return {
+    ...res,
+    data: {
+      milestone: {
+        threshold: String(milestone.amount ?? '100'),
+        reward: String(milestone.reward_amount ?? '15'),
+        maxTimes: Number(milestone.max_times ?? 2),
+      },
+      multiLevel: {
+        enabled: (rebate.mode ?? 'decay') === 'decay',
+        totalPoolRate: String(Number(rebate.pool_ratio ?? 0.15) * 100),
+        decayCoefficient: String(rebate.decay_factor ?? '0.4'),
+        maxDepth: 10,
+        inactiveNodeMode: rebate.inactive_node_mode === 'exclude_recalculate' ? 'exclude_recalculate' : 'platform',
+      },
+      withdrawLimit: {
+        minAmount: String(withdraw.min_amount ?? '50'),
+        cooldownHours: Number(withdraw.freeze_days ?? 0) * 24,
+        dailyLimit: Number(withdraw.daily_limit ?? 1),
+      },
+      riskControl: {
+        blacklistEnabled: Boolean(risk.blacklist_enabled ?? true),
+        autoFreezeThreshold: 50,
+        lieFlatEnabled: Boolean(risk.lie_flat_enabled ?? true),
+        lieFlatDays: Number(risk.lie_flat_days ?? 7),
+        lieFlatRestoreMinRecharge: String(risk.lie_flat_restore_min_recharge ?? '10'),
+      },
+      lastModifiedBy: '',
+      lastModifiedAt: '',
+    },
+  }
 }
 
 export const saveFullRebateConfig = async (config: FullRebateConfig): Promise<ApiRes<null>> => {
@@ -137,7 +218,30 @@ export const saveFullRebateConfig = async (config: FullRebateConfig): Promise<Ap
     await delay(500)
     return { code: 0, message: 'ok', data: null }
   }
-  return request.put('/admin/rebate-config', config)
+  return request.put('/admin/rebate-config', {
+    values: {
+      milestone: {
+        amount: config.milestone.threshold,
+        reward_amount: config.milestone.reward,
+        max_times: config.milestone.maxTimes,
+      },
+      rebate: {
+        pool_ratio: String((Number(config.multiLevel.totalPoolRate) || 0) / 100),
+        decay_factor: config.multiLevel.decayCoefficient,
+        inactive_node_mode: config.multiLevel.inactiveNodeMode,
+      },
+      withdraw: {
+        min_amount: config.withdrawLimit.minAmount,
+        daily_limit: config.withdrawLimit.dailyLimit,
+      },
+      risk: {
+        blacklist_enabled: config.riskControl.blacklistEnabled,
+        lie_flat_enabled: config.riskControl.lieFlatEnabled,
+        lie_flat_days: config.riskControl.lieFlatDays,
+        lie_flat_restore_min_recharge: config.riskControl.lieFlatRestoreMinRecharge,
+      },
+    },
+  })
 }
 
 // compat
@@ -185,6 +289,7 @@ const actionMap: Record<string, AuditActionType> = {
   'withdraw.approve': '提现审批',
   'withdraw.reject': '提现审批',
   'withdraw.mark_paid': '提现审批',
+  'withdraw.payout_failed': '提现审批',
   'user.set_role': '角色变更',
   'rebate.override.update': '返利层级调整',
 }

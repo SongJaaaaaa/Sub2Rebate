@@ -36,22 +36,26 @@ const fetchList = async (page = 1) => {
   }
 }
 
+const patchRow = (row: AdminWithdrawRecord, data: AdminWithdrawRecord) => {
+  Object.assign(row, data)
+}
+
 const onApprove = async (row: AdminWithdrawRecord) => {
   await ElMessageBox.confirm(`通过「${row.nickname}」的提现申请 ¥${row.amount}？`, '审批通过', { confirmButtonText: '通过', type: 'success' })
   const res = await approveWithdraw(row.id)
   if (res.code === 0) {
-    row.status = 'approved'
+    patchRow(row, res.data)
     ElMessage.success('已通过')
   }
 }
 
 const onMarkPaid = async (row: AdminWithdrawRecord) => {
-  await ElMessageBox.confirm(`确认已打款 ¥${row.amount} 给「${row.nickname}」？`, '确认打款', { confirmButtonText: '确认打款', type: 'success' })
+  const title = row.payoutError ? '重试打款' : '确认打款'
+  await ElMessageBox.confirm(`确认打款 ¥${row.amount} 给「${row.nickname}」？`, title, { confirmButtonText: title, type: 'success' })
   const res = await markPaid(row.id)
   if (res.code === 0) {
-    row.status = 'paid'
-    row.paidAt = new Date().toISOString().replace('T', ' ').slice(0, 19)
-    ElMessage.success('已标记打款')
+    patchRow(row, res.data)
+    ElMessage.success(row.payoutTradeNo ? '自动打款成功' : '已标记打款')
   }
 }
 
@@ -65,8 +69,7 @@ const onReject = async (row: AdminWithdrawRecord) => {
   })
   const res = await rejectWithdraw(row.id, reason)
   if (res.code === 0) {
-    row.status = 'rejected'
-    row.rejectReason = reason
+    patchRow(row, res.data)
     ElMessage.success('已拒绝')
   }
 }
@@ -106,7 +109,7 @@ onMounted(() => fetchList())
         <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 140px" @change="() => fetchList(1)">
           <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
-        <span class="text-xs text-[var(--sr-muted)]">提示：通过后请在线下打款完成后点击「确认打款」</span>
+        <span class="text-xs text-[var(--sr-muted)]">提示：未开启支付宝自动打款时，确认打款仅标记线下完成。</span>
       </div>
 
       <!-- 空状态 -->
@@ -131,6 +134,14 @@ onMounted(() => fetchList())
           </template>
         </el-table-column>
         <el-table-column prop="rejectReason" label="拒绝原因" min-width="100" show-overflow-tooltip />
+        <el-table-column prop="payoutTradeNo" label="转账流水" min-width="130" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.payoutTradeNo || '-' }}</template>
+        </el-table-column>
+        <el-table-column prop="payoutError" label="打款异常" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span :class="row.payoutError ? 'text-red-500' : 'text-[var(--sr-muted)]'">{{ row.payoutError || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="申请时间" width="160" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
@@ -141,8 +152,8 @@ onMounted(() => fetchList())
               <el-button type="danger" text size="small" @click="onReject(row)">拒绝</el-button>
             </template>
             <template v-else-if="row.status === 'approved'">
-              <el-tooltip content="请确认已通过支付宝/银行转账完成打款" placement="top">
-                <el-button type="primary" text size="small" @click="onMarkPaid(row)">确认打款</el-button>
+              <el-tooltip :content="row.payoutError ? '上次自动打款失败，可修正配置或账号后重试' : '开启自动打款时会调用支付宝转账，否则只标记线下完成'" placement="top">
+                <el-button type="primary" text size="small" @click="onMarkPaid(row)">{{ row.payoutError ? '重试打款' : '确认打款' }}</el-button>
               </el-tooltip>
             </template>
             <span v-else class="text-xs text-[var(--sr-muted)]">—</span>

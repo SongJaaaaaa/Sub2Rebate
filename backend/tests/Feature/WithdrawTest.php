@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Rebate\Models\RebateBalance;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class WithdrawTest extends TestCase
@@ -22,7 +23,9 @@ class WithdrawTest extends TestCase
             ->assertJsonPath('data.minAmount', '50.00')
             ->assertJsonPath('data.reviewMode', 'manual')
             ->assertJsonPath('data.dailyLimit', 1)
-            ->assertJsonPath('data.freezeDays', 0);
+            ->assertJsonPath('data.freezeDays', 0)
+            ->assertJsonPath('data.toApiQuotaEnabled', true)
+            ->assertJsonPath('data.toApiQuotaRate', '1.000000');
     }
 
     public function test_user_can_save_and_read_withdraw_account(): void
@@ -72,8 +75,63 @@ class WithdrawTest extends TestCase
             'user_id' => $user->id,
             'amount' => '100',
             'status' => 'pending',
+            'type' => 'alipay',
             'account_no' => 'demo@example.com',
             'real_name' => '张三',
+        ]);
+    }
+
+    public function test_user_can_transfer_rebate_balance_to_sub2api_quota(): void
+    {
+        config([
+            'sub2rebate.sub2api_base_url' => 'https://sub2api.test',
+            'sub2rebate.sub2api_admin_api_key' => 'secret-key',
+        ]);
+        Http::fake([
+            'https://sub2api.test/api/v1/admin/users/1001/balance' => Http::response([
+                'code' => 0,
+                'data' => ['balance' => '150'],
+            ]),
+        ]);
+
+        $user = $this->user();
+        $this->balance($user, '200');
+
+        $this->actingAs($user)
+            ->postJson('/api/v1/withdraw/to-api-quota', [
+                'amount' => '100',
+                'remark' => '转入额度',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.record.type', 'api_quota')
+            ->assertJsonPath('data.record.status', 'paid')
+            ->assertJsonPath('data.balance.availableAmount', '100.00')
+            ->assertJsonPath('data.balance.withdrawnAmount', '100.00')
+            ->assertJsonPath('data.apiQuotaAmount', '100.00')
+            ->assertJsonPath('data.sub2ApiBalance.currentAmount', '50.00')
+            ->assertJsonPath('data.sub2ApiBalance.afterAmount', '150.00')
+            ->assertJsonPath('data.sub2ApiBalance.totalChargedAmount', '150.00')
+            ->assertJsonPath('data.record.sub2ApiBalanceBefore', '50.00')
+            ->assertJsonPath('data.record.sub2ApiBalanceAfter', '150.00');
+
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://sub2api.test/api/v1/admin/users/1001/balance'
+            && $request['balance'] === 100.0
+            && $request['operation'] === 'add'
+            && $request->hasHeader('Idempotency-Key', 'sub2rebate-withdraw-api-quota-1'));
+
+        $this->assertDatabaseHas('withdraw_records', [
+            'user_id' => $user->id,
+            'type' => 'api_quota',
+            'status' => 'paid',
+            'account_type' => 'api_quota',
+            'amount' => '100',
+            'sub2api_balance_before' => '50',
+            'sub2api_balance_after' => '150',
+        ]);
+        $this->assertDatabaseHas('rebate_balances', [
+            'user_id' => $user->id,
+            'available_amount' => '100',
+            'withdrawn_amount' => '100',
         ]);
     }
 

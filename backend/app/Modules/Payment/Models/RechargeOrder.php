@@ -19,7 +19,7 @@ class RechargeOrder extends Model
     public const CREDIT_FAILED = 'failed';
 
     public const CHANNEL_ALIPAY = 'alipay';
-    public const CHANNEL_ALIMPAY_QR = 'alimpay_qr';
+    public const CHANNEL_EPAY = 'epay';
 
     protected $fillable = [
         'user_id',
@@ -32,6 +32,8 @@ class RechargeOrder extends Model
         'bonus_amount',
         'credit_amount',
         'paid_amount',
+        'sub2_balance_before',
+        'sub2_balance_after',
         'status',
         'trade_status',
         'credit_status',
@@ -66,6 +68,8 @@ class RechargeOrder extends Model
             'user_id' => 'int',
             'reviewed_by' => 'int',
             'rebate_event_id' => 'int',
+            'sub2_balance_before' => 'decimal:6',
+            'sub2_balance_after' => 'decimal:6',
         ];
     }
 }

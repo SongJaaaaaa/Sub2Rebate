@@ -38,6 +38,7 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => 'prefer',
+            'connect_timeout' => env('SUB2API_DB_CONNECT_TIMEOUT', 2),
         ],
     ],
     'migrations' => [

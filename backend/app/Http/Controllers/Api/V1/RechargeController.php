@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Payment\Models\RechargeOrder;
+use App\Modules\Payment\Services\RechargeCallbackService;
 use App\Modules\Payment\Services\RechargeOrderService;
 use App\Support\ApiError;
 use App\Support\ApiResponse;
@@ -13,8 +14,10 @@ use Illuminate\Http\Request;
 
 class RechargeController extends Controller
 {
-    public function __construct(private readonly RechargeOrderService $orders)
-    {
+    public function __construct(
+        private readonly RechargeOrderService $orders,
+        private readonly RechargeCallbackService $callbacks,
+    ) {
     }
 
     public function config(): JsonResponse
@@ -88,8 +91,30 @@ class RechargeController extends Controller
             $user,
             (int) $request->integer('page', 1),
             (int) $request->integer('pageSize', 20),
-            trim((string) $request->query('status', ''))
+            trim((string) $request->query('status', '')),
+            trim((string) $request->query('startDate', $request->query('start_date', ''))),
+            trim((string) $request->query('endDate', $request->query('end_date', '')))
         ));
+    }
+
+    public function epayReturn(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        if ($user === null) {
+            return ApiResponse::fail(ApiError::UNAUTHENTICATED, '未登录', null, 401);
+        }
+
+        $result = $this->callbacks->syncEpayReturn($user, $request->all());
+        if (! ($result['ok'] ?? false)) {
+            return ApiResponse::fail((int) $result['code'], (string) $result['message'], null, (int) $result['status']);
+        }
+
+        $order = $result['order'] ?? null;
+        if (! $order instanceof RechargeOrder) {
+            return ApiResponse::ok();
+        }
+
+        return ApiResponse::ok($this->orders->payload($order->refresh()));
     }
 
     private function user(Request $request): ?User

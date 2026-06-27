@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { Refresh } from '@element-plus/icons-vue'
 import MetricCard from '@/components/common/MetricCard.vue'
 import AppCard from '@/components/common/AppCard.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -11,6 +12,7 @@ import { money } from '@/utils/money'
 
 const dashboard = useDashboardStore()
 const auth = useAuthStore()
+const refreshing = ref(false)
 
 const stats = computed(() => {
   if (!dashboard.summary) return []
@@ -26,16 +28,28 @@ const trendChartData = computed(() =>
   dashboard.trends.map((t) => ({ date: t.date, value: parseFloat(t.rebateAmount) }))
 )
 
-onMounted(() => dashboard.fetchDashboard())
+const onRefresh = async () => {
+  refreshing.value = true
+  try {
+    await Promise.all([auth.fetchMe(), dashboard.fetchDashboard()])
+  } finally {
+    refreshing.value = false
+  }
+}
+
+onMounted(() => onRefresh())
 </script>
 
 <template>
   <div class="space-y-6">
     <PageHeader :title="`欢迎回来，${auth.user?.nickname || '用户'}`" description="查看返利余额、邀请表现和最近动态。">
       <template #actions>
-        <RouterLink to="/withdraw">
-          <el-button type="primary">申请提现</el-button>
-        </RouterLink>
+        <div class="flex gap-2">
+          <el-button :icon="Refresh" :loading="refreshing" @click="onRefresh">刷新</el-button>
+          <RouterLink to="/withdraw">
+            <el-button type="primary">申请提现</el-button>
+          </RouterLink>
+        </div>
       </template>
     </PageHeader>
 

@@ -5,6 +5,7 @@ namespace App\Modules\Invite\Services;
 use App\Models\User;
 use App\Modules\Sub2Api\DTO\Sub2ApiUserData;
 use App\Modules\Sub2Api\Repositories\Sub2ApiUserRepository;
+use App\Modules\Sub2Api\Services\Sub2ApiAdminClient;
 use App\Support\ApiError;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -18,22 +19,25 @@ class InviteService
     private const SUB2API_MISSING = 'missing';
     private const SUB2API_ERROR = 'error';
 
-    public function __construct(private readonly Sub2ApiUserRepository $sub2Users)
-    {
+    public function __construct(
+        private readonly Sub2ApiUserRepository $sub2Users,
+        private readonly Sub2ApiAdminClient $sub2Api,
+    ) {
     }
 
     public function me(User $user): array
     {
         $ref = $this->refreshSub2ApiTeam($user);
-        $sub2User = $this->sub2User((int) $user->id);
+        $sub2User = $this->sub2UserFor($user);
+        $affCode = (string) ($sub2User?->affCode ?: $user->sub2api_aff_code ?: $this->sub2ApiAffCode($user));
 
         return [
             'inviteCode' => '',
             'inviteUrl' => '',
-            'sub2ApiAffCode' => $sub2User?->affCode ?? (string) ($user->sub2api_aff_code ?? ''),
+            'sub2ApiAffCode' => $affCode,
             'sub2ApiInviteUrl' => $this->makeUrl(
                 (string) config('sub2rebate.sub2api_invite_url_template'),
-                $sub2User?->affCode ?? (string) ($user->sub2api_aff_code ?? '')
+                $affCode
             ),
             'sub2ApiAffiliatePageUrl' => (string) config('sub2rebate.sub2api_affiliate_page_url'),
             'parent' => $this->userBrief($ref->parent_user_id !== null ? User::query()->find((int) $ref->parent_user_id) : null),
@@ -228,7 +232,7 @@ class InviteService
         }
         $seen[] = (int) $user->id;
 
-        $sub2User = $this->sub2User((int) $user->id);
+        $sub2User = $this->sub2UserFor($user);
         if ($sub2User !== null) {
             $user->forceFill([
                 'username' => $sub2User->username,
@@ -298,7 +302,7 @@ class InviteService
 
     public function refreshSub2ApiTeam(User $user): stdClass
     {
-        if ($this->sub2User((int) $user->id) === null) {
+        if ($this->sub2UserFor($user) === null) {
             return $this->syncFromSub2Api($user);
         }
 
@@ -541,6 +545,49 @@ class InviteService
         $status = $this->sub2UserStatus($id);
 
         return $status instanceof Sub2ApiUserData ? $status : null;
+    }
+
+    private function sub2UserFor(User $user): ?Sub2ApiUserData
+    {
+        $sub2User = $this->sub2User((int) $user->id);
+        if ($sub2User instanceof Sub2ApiUserData) {
+            return $sub2User;
+        }
+
+        foreach ([(string) $user->email, (string) $user->username] as $account) {
+            $account = trim($account);
+            if ($account === '') {
+                continue;
+            }
+
+            try {
+                $sub2User = $this->sub2Users->findByAccount($account);
+            } catch (Throwable) {
+                $sub2User = null;
+            }
+
+            if ($sub2User instanceof Sub2ApiUserData) {
+                return $sub2User;
+            }
+        }
+
+        return null;
+    }
+
+    private function sub2ApiAffCode(User $user): string
+    {
+        try {
+            $res = $this->sub2Api->affiliateOverview((int) $user->id);
+        } catch (Throwable) {
+            return '';
+        }
+
+        $code = trim((string) data_get($res, 'data.aff_code', ''));
+        if ($code !== '') {
+            $user->forceFill(['sub2api_aff_code' => $code])->save();
+        }
+
+        return $code;
     }
 
     private function sub2UserStatus(int $id): Sub2ApiUserData|string

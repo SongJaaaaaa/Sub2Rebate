@@ -53,6 +53,21 @@ class RechargeOrderFlowTest extends TestCase
         ]);
     }
 
+    public function test_user_can_create_recharge_order_below_ten_yuan(): void
+    {
+        $user = $this->user(1001, 'user');
+        $this->setRechargeConfig();
+
+        $this->withToken($user->createToken('test')->plainTextToken)
+            ->postJson('/api/v1/recharge/orders', [
+                'amount' => '1',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.amount', '1.00')
+            ->assertJsonPath('data.creditAmount', '1.00')
+            ->assertJsonPath('data.status', 'pending');
+    }
+
     public function test_admin_can_approve_recharge_order_and_create_rebate_event(): void
     {
         config([
@@ -60,9 +75,13 @@ class RechargeOrderFlowTest extends TestCase
             'sub2rebate.sub2api_admin_api_key' => 'secret-key',
         ]);
         Http::fake([
+            'https://sub2api.test/api/v1/admin/users/1001' => Http::response([
+                'code' => 0,
+                'data' => ['id' => 1001, 'balance' => 15],
+            ]),
             'https://sub2api.test/api/v1/admin/users/1001/balance' => Http::response([
                 'code' => 0,
-                'data' => ['id' => 1001, 'balance' => 105, 'total_recharged' => 105],
+                'data' => ['id' => 1001, 'balance' => 120, 'total_recharged' => 120],
             ]),
         ]);
 
@@ -105,6 +124,8 @@ class RechargeOrderFlowTest extends TestCase
             'id' => $order->id,
             'status' => RechargeOrder::STATUS_APPROVED,
             'reviewed_by' => $admin->id,
+            'sub2_balance_before' => '15',
+            'sub2_balance_after' => '120',
         ]);
         $this->assertDatabaseHas('payment_records', [
             'user_id' => $user->id,
@@ -150,6 +171,63 @@ class RechargeOrderFlowTest extends TestCase
             'id' => $order->id,
             'status' => RechargeOrder::STATUS_REJECTED,
         ]);
+    }
+
+    public function test_user_recharge_records_support_status_and_date_filters(): void
+    {
+        $user = $this->user(1001, 'user');
+        $other = $this->user(1002, 'other');
+
+        $approved = RechargeOrder::query()->create([
+            'user_id' => $user->id,
+            'order_no' => 'RC202606260001',
+            'channel' => 'alipay',
+            'amount' => '50.000000',
+            'bonus_amount' => '0.000000',
+            'credit_amount' => '50.000000',
+            'status' => RechargeOrder::STATUS_APPROVED,
+            'expire_at' => now()->addMinutes(15),
+        ]);
+        $approved->forceFill([
+            'created_at' => '2026-06-26 10:00:00',
+            'updated_at' => '2026-06-26 10:00:00',
+        ])->save();
+
+        $pending = RechargeOrder::query()->create([
+            'user_id' => $user->id,
+            'order_no' => 'RC202606250001',
+            'channel' => 'alipay',
+            'amount' => '100.000000',
+            'bonus_amount' => '5.000000',
+            'credit_amount' => '105.000000',
+            'status' => RechargeOrder::STATUS_PENDING,
+            'expire_at' => now()->addMinutes(15),
+        ]);
+        $pending->forceFill([
+            'created_at' => '2026-06-25 10:00:00',
+            'updated_at' => '2026-06-25 10:00:00',
+        ])->save();
+
+        $otherOrder = RechargeOrder::query()->create([
+            'user_id' => $other->id,
+            'order_no' => 'RC202606260002',
+            'channel' => 'alipay',
+            'amount' => '200.000000',
+            'bonus_amount' => '15.000000',
+            'credit_amount' => '215.000000',
+            'status' => RechargeOrder::STATUS_APPROVED,
+            'expire_at' => now()->addMinutes(15),
+        ]);
+        $otherOrder->forceFill([
+            'created_at' => '2026-06-26 11:00:00',
+            'updated_at' => '2026-06-26 11:00:00',
+        ])->save();
+
+        $this->withToken($user->createToken('test')->plainTextToken)
+            ->getJson('/api/v1/recharge/orders?status=approved&startDate=2026-06-26&endDate=2026-06-26')
+            ->assertOk()
+            ->assertJsonPath('data.total', 1)
+            ->assertJsonPath('data.list.0.orderNo', 'RC202606260001');
     }
 
     private function setRechargeConfig(): void

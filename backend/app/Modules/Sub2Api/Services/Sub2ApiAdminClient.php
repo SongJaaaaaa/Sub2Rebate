@@ -13,6 +13,11 @@ class Sub2ApiAdminClient
         return $this->get('/api/v1/admin/users/'.$id);
     }
 
+    public function affiliateOverview(string|int $id): array
+    {
+        return $this->get('/api/v1/admin/affiliates/users/'.$id.'/overview');
+    }
+
     public function updateUserBalance(string|int $id, float $balance, string $operation, string $notes, string $idempotencyKey): array
     {
         $res = $this->http()

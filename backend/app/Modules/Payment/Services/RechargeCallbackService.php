@@ -14,17 +14,17 @@ use Throwable;
 class RechargeCallbackService
 {
     public function __construct(
-        private readonly AliMPayService $aliMPay,
+        private readonly EpayService $epay,
         private readonly AuditLogService $audits,
         private readonly Sub2ApiAdminClient $sub2Api,
         private readonly RechargeEventService $recharges,
     ) {
     }
 
-    public function handleAliMPay(array $payload): array
+    public function handleEpay(array $payload): array
     {
         $log = PaymentNotifyLog::query()->create([
-            'provider' => 'alimpay',
+            'provider' => 'epay',
             'event_type' => 'trade_notify',
             'out_trade_no' => $this->str($payload['out_trade_no'] ?? ''),
             'provider_trade_no' => $this->str($payload['trade_no'] ?? ''),
@@ -42,15 +42,15 @@ class RechargeCallbackService
             }
         }
 
-        if (! $this->aliMPay->verify($payload)) {
-            return $this->finish($log, false, 'failed', 'AliMPay 签名或商户 PID 校验失败');
+        if (! $this->epay->verify($payload)) {
+            return $this->finish($log, false, 'failed', 'Epay 签名或商户 PID 校验失败');
         }
 
         $log->verify_passed = true;
         $log->save();
 
         if ($this->str($payload['type'] ?? '') !== 'alipay') {
-            return $this->finish($log, false, 'failed', 'AliMPay 支付类型不匹配');
+            return $this->finish($log, false, 'failed', 'Epay 支付类型不匹配');
         }
 
         if ($this->str($payload['trade_status'] ?? '') !== 'TRADE_SUCCESS') {
@@ -65,21 +65,48 @@ class RechargeCallbackService
             return $this->finish($log, false, 'failed', '本地充值订单不存在');
         }
 
-        if ($order->channel !== RechargeOrder::CHANNEL_ALIMPAY_QR) {
+        if ($order->channel !== RechargeOrder::CHANNEL_EPAY) {
             return $this->finish($log, false, 'failed', '订单支付通道不匹配');
         }
 
-        if ($this->money2($order->amount) !== $this->money2($payload['money'] ?? null)) {
-            return $this->finish($log, false, 'failed', '订单金额与回调金额不一致');
+        if ((float) $this->money2($payload['money'] ?? null) < (float) $this->money2($order->amount)) {
+            return $this->finish($log, false, 'failed', '订单金额大于回调金额');
         }
 
         return $this->credit($order, $payload, $log);
     }
 
+    public function syncEpayReturn(User $user, array $payload): array
+    {
+        $outTradeNo = $this->str($payload['out_trade_no'] ?? '');
+        if ($outTradeNo === '') {
+            return $this->fail('缺少回跳订单号');
+        }
+
+        $order = RechargeOrder::query()
+            ->where('out_trade_no', $outTradeNo)
+            ->first();
+
+        if (! $order instanceof RechargeOrder) {
+            return $this->fail('本地充值订单不存在');
+        }
+
+        if ((int) $order->user_id !== (int) $user->id) {
+            return [
+                'ok' => false,
+                'code' => ApiError::FORBIDDEN,
+                'message' => '不能同步别人的充值订单',
+                'status' => 403,
+            ];
+        }
+
+        return $this->handleEpay($payload);
+    }
+
     public function retryCredit(RechargeOrder $order, ?User $admin = null): array
     {
-        if ($order->channel !== RechargeOrder::CHANNEL_ALIMPAY_QR) {
-            return $this->fail('只有 AliMPay 订单可以重试入账');
+        if ($order->channel !== RechargeOrder::CHANNEL_EPAY) {
+            return $this->fail('只有 Epay 订单可以重试入账');
         }
 
         if (! in_array($order->status, [RechargeOrder::STATUS_PAID, RechargeOrder::STATUS_FAILED], true)) {
@@ -92,7 +119,7 @@ class RechargeCallbackService
 
         $payload = is_array($order->notify_payload) ? $order->notify_payload : [];
         $log = PaymentNotifyLog::query()->create([
-            'provider' => 'alimpay',
+            'provider' => 'epay',
             'event_type' => 'credit_retry',
             'out_trade_no' => (string) $order->out_trade_no,
             'provider_trade_no' => (string) $order->provider_trade_no,
@@ -103,24 +130,24 @@ class RechargeCallbackService
             'received_at' => now(),
         ]);
 
-        $result = $this->credit($order, $payload, $log);
+        $result = $this->credit($order, $payload, $log, '-retry-'.$log->id);
         if (($result['ok'] ?? false) && $admin instanceof User) {
-            $this->audits->record('payment', 'payment.alimpay_credit_retry', [
+            $this->audits->record('payment', 'payment.epay_credit_retry', [
                 'actor' => $admin,
                 'target_user_id' => $order->user_id,
                 'subject_type' => RechargeOrder::class,
                 'subject_id' => $order->id,
                 'after_values' => $order->refresh()->toArray(),
-                'remark' => 'AliMPay 手动重试入账',
+                'remark' => 'Epay 手动重试入账',
             ]);
         }
 
         return $result;
     }
 
-    private function credit(RechargeOrder $order, array $payload, PaymentNotifyLog $log): array
+    private function credit(RechargeOrder $order, array $payload, PaymentNotifyLog $log, string $keySuffix = ''): array
     {
-        return DB::transaction(function () use ($order, $payload, $log): array {
+        return DB::transaction(function () use ($order, $payload, $log, $keySuffix): array {
             $locked = RechargeOrder::query()->lockForUpdate()->find($order->id);
             if (! $locked instanceof RechargeOrder) {
                 return $this->finish($log, false, 'failed', '本地充值订单不存在');
@@ -141,6 +168,7 @@ class RechargeCallbackService
             $locked->notify_payload = $payload ?: $locked->notify_payload;
             $locked->credit_status = RechargeOrder::CREDIT_PENDING;
             $locked->credit_fail_msg = null;
+            $locked->sub2_balance_before ??= $this->currentSub2Balance($locked->user_id);
             $locked->save();
 
             try {
@@ -148,9 +176,11 @@ class RechargeCallbackService
                     $locked->user_id,
                     (float) $locked->credit_amount,
                     'add',
-                    'AliMPay充值 '.$locked->order_no,
-                    'sub2rebate-recharge-order-'.$locked->order_no
+                    'Epay充值 '.$locked->order_no,
+                    'sub2rebate-recharge-order-'.$locked->order_no.$keySuffix
                 );
+                $locked->sub2_balance_after = $this->balanceFromResponse($sub2Res)
+                    ?? $this->currentSub2Balance($locked->user_id);
             } catch (Throwable $e) {
                 $locked->status = RechargeOrder::STATUS_FAILED;
                 $locked->credit_status = RechargeOrder::CREDIT_FAILED;
@@ -169,7 +199,7 @@ class RechargeCallbackService
                 'source_currency' => 'CNY',
                 'credit_amount' => $this->money($locked->credit_amount),
                 'operator_user_id' => null,
-                'remark' => 'AliMPay 经营码充值到账',
+                'remark' => 'Epay 当面付充值到账',
                 'occurred_at' => $locked->paid_at ?: $paidAt,
             ]);
 
@@ -189,16 +219,16 @@ class RechargeCallbackService
             $locked->credit_fail_msg = null;
             $locked->save();
 
-            $this->audits->record('payment', 'payment.alimpay_notify_success', [
+            $this->audits->record('payment', 'payment.epay_notify_success', [
                 'target_user_id' => $locked->user_id,
                 'subject_type' => RechargeOrder::class,
                 'subject_id' => $locked->id,
                 'before_values' => $before,
                 'after_values' => $locked->toArray() + ['sub2api_response' => $sub2Res],
-                'remark' => 'AliMPay 回调自动入账',
+                'remark' => 'Epay 回调自动入账',
             ]);
 
-            return $this->finish($log, true, 'processed', 'AliMPay 回调入账成功', $locked);
+            return $this->finish($log, true, 'processed', 'Epay 回调入账成功', $locked);
         });
     }
 
@@ -242,5 +272,24 @@ class RechargeCallbackService
     private function money2(float|int|string|null $value): string
     {
         return number_format((float) $value, 2, '.', '');
+    }
+
+    private function currentSub2Balance(int $userId): ?string
+    {
+        try {
+            $res = $this->sub2Api->user($userId);
+            $value = data_get($res, 'data.balance');
+        } catch (Throwable) {
+            return null;
+        }
+
+        return is_numeric($value) ? $this->money($value) : null;
+    }
+
+    private function balanceFromResponse(array $res): ?string
+    {
+        $value = data_get($res, 'data.balance');
+
+        return is_numeric($value) ? $this->money($value) : null;
     }
 }

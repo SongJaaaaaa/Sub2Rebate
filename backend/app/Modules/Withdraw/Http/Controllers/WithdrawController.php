@@ -65,6 +65,28 @@ class WithdrawController extends Controller
         return ApiResponse::ok([
             'record' => $result['record'],
             'balance' => $result['balance'],
+            'sub2ApiBalance' => $result['sub2ApiBalance'] ?? null,
+        ]);
+    }
+
+    public function toApiQuota(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        if ($user === null) {
+            return ApiResponse::fail(ApiError::UNAUTHENTICATED, '未登录', null, 401);
+        }
+
+        $result = $this->withdraw->applyToApiQuota($user, $request->all());
+        if (! ($result['ok'] ?? false)) {
+            return ApiResponse::fail((int) $result['code'], (string) $result['message'], null, (int) $result['status']);
+        }
+
+        return ApiResponse::ok([
+            'record' => $result['record'],
+            'balance' => $result['balance'],
+            'apiQuotaAmount' => $result['apiQuotaAmount'],
+            'sub2ApiBalance' => $result['sub2ApiBalance'] ?? null,
+            'sub2api' => $result['sub2api'],
         ]);
     }
 

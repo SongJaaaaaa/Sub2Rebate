@@ -6,8 +6,10 @@ use App\Models\User;
 use App\Modules\Invite\Services\InviteService;
 use App\Modules\Sub2Api\DTO\Sub2ApiUserData;
 use App\Modules\Sub2Api\Repositories\Sub2ApiUserRepository;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Throwable;
 
 class Sub2RebateAuthService
@@ -41,34 +43,33 @@ class Sub2RebateAuthService
     {
         try {
             $sub2User = $this->users->findByAccount($account);
-        } catch (Throwable $e) {
-            if (! app()->environment(['local', 'testing'])) {
-                throw $e;
+        } catch (Throwable) {
+            $sub2User = null;
+        }
+
+        if ($sub2User !== null && $sub2User->passwordHash !== '') {
+            if ($sub2User->status !== 'active') {
+                return [
+                    'error' => 'disabled',
+                ];
             }
 
-            return $this->localValidate($account, $password);
+            if (password_verify($password, $sub2User->passwordHash)) {
+                $user = $this->syncLocalUser($sub2User);
+
+                return [
+                    'user' => $user,
+                    'sub2User' => $sub2User,
+                ];
+            }
         }
 
-        if ($sub2User === null || $sub2User->passwordHash === '') {
-            return $this->localValidate($account, $password);
+        $remote = $this->remoteValidate($account, $password);
+        if ($remote !== null) {
+            return $remote;
         }
 
-        if ($sub2User->status !== 'active') {
-            return [
-                'error' => 'disabled',
-            ];
-        }
-
-        if (! password_verify($password, $sub2User->passwordHash)) {
-            return $this->localValidate($account, $password);
-        }
-
-        $user = $this->syncLocalUser($sub2User);
-
-        return [
-            'user' => $user,
-            'sub2User' => $sub2User,
-        ];
+        return $this->localValidate($account, $password);
     }
 
     public function syncLocalUser(Sub2ApiUserData $sub2User): User
@@ -135,5 +136,99 @@ class Sub2RebateAuthService
             'user' => $user,
             'sub2User' => null,
         ];
+    }
+
+    private function remoteValidate(string $account, string $password): ?array
+    {
+        $baseUrl = rtrim((string) config('sub2rebate.sub2api_base_url'), '/');
+        if ($baseUrl === '') {
+            return null;
+        }
+
+        try {
+            $login = Http::baseUrl($baseUrl)
+                ->timeout((int) config('sub2rebate.sub2api_admin_timeout', 10))
+                ->acceptJson()
+                ->post('/api/v1/auth/login', [
+                    'email' => $account,
+                    'password' => $password,
+                ]);
+
+            if (! $login->successful()) {
+                return null;
+            }
+
+            $token = (string) (
+                data_get($login->json(), 'data.access_token')
+                ?: data_get($login->json(), 'data.token')
+            );
+            if ($token === '') {
+                return null;
+            }
+
+            $me = Http::baseUrl($baseUrl)
+                ->timeout((int) config('sub2rebate.sub2api_admin_timeout', 10))
+                ->acceptJson()
+                ->withToken($token)
+                ->get('/api/v1/auth/me');
+
+            if (! $me->successful()) {
+                return null;
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        $data = data_get($me->json(), 'data');
+        if (is_array(data_get($data, 'user'))) {
+            $data = data_get($data, 'user');
+        }
+
+        if (! is_array($data) || ! is_numeric($data['id'] ?? null)) {
+            return null;
+        }
+
+        $status = (string) ($data['status'] ?? 'active');
+        if ($status !== 'active') {
+            return [
+                'error' => 'disabled',
+            ];
+        }
+
+        $email = trim((string) ($data['email'] ?? ''));
+        if ($email === '' && str_contains($account, '@')) {
+            $email = $account;
+        }
+
+        $sub2User = new Sub2ApiUserData(
+            id: (int) $data['id'],
+            email: $email,
+            username: (string) ($data['username'] ?? ''),
+            passwordHash: '',
+            role: (string) ($data['role'] ?? 'user'),
+            status: $status,
+            balance: (string) ($data['balance'] ?? '0'),
+            totalRecharged: (string) ($data['total_recharged'] ?? '0'),
+            affCode: isset($data['aff_code']) ? (string) $data['aff_code'] : null,
+            inviterId: is_numeric($data['inviter_id'] ?? null) ? (int) $data['inviter_id'] : null,
+            createdAt: $this->time($data['created_at'] ?? null),
+            updatedAt: $this->time($data['updated_at'] ?? null),
+        );
+
+        $user = $this->syncLocalUser($sub2User);
+
+        return [
+            'user' => $user,
+            'sub2User' => $sub2User,
+        ];
+    }
+
+    private function time(mixed $value): ?CarbonImmutable
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return CarbonImmutable::parse((string) $value)->timezone('Asia/Shanghai');
     }
 }

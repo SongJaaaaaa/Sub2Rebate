@@ -26,9 +26,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::get('health', HealthController::class)->name('api.v1.health');
-    Route::match(['get', 'post'], 'payments/alimpay/notify', [PaymentNotifyController::class, 'alimpay'])
+    Route::match(['get', 'post'], 'recharge/epay/notify', [PaymentNotifyController::class, 'epay'])
         ->middleware('throttle:payment-notify')
-        ->name('api.v1.payments.alimpay.notify');
+        ->name('api.v1.recharge.epay.notify');
+    Route::match(['get', 'post'], 'payments/alimpay/notify', [PaymentNotifyController::class, 'epay'])
+        ->middleware('throttle:payment-notify');
 
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('api.v1.auth.login');
 
@@ -40,6 +42,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('account/change-password', [AccountController::class, 'changePassword'])->name('api.v1.account.change-password');
         Route::get('config/items', [ConfigItemController::class, 'index'])->name('api.v1.config.items');
         Route::get('recharge/config', [RechargeController::class, 'config'])->name('api.v1.recharge.config');
+        Route::post('recharge/epay/return', [RechargeController::class, 'epayReturn'])->name('api.v1.recharge.epay.return');
         Route::post('recharge/orders', [RechargeController::class, 'create'])->name('api.v1.recharge.orders.create');
         Route::post('recharge/orders/{id}/submit', [RechargeController::class, 'submit'])->name('api.v1.recharge.orders.submit');
         Route::get('recharge/orders/{id}', [RechargeController::class, 'show'])->name('api.v1.recharge.orders.show');
@@ -52,6 +55,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('withdraw/account', [WithdrawController::class, 'account'])->name('api.v1.withdraw.account');
         Route::post('withdraw/account', [WithdrawController::class, 'saveAccount'])->name('api.v1.withdraw.account.save');
         Route::post('withdraw/apply', [WithdrawController::class, 'apply'])->middleware('throttle:withdraw')->name('api.v1.withdraw.apply');
+        Route::post('withdraw/to-api-quota', [WithdrawController::class, 'toApiQuota'])->middleware('throttle:withdraw')->name('api.v1.withdraw.to-api-quota');
         Route::get('withdraw/records', [WithdrawController::class, 'records'])->name('api.v1.withdraw.records');
         Route::get('dashboard/summary', [DashboardController::class, 'summary'])->name('api.v1.dashboard.summary');
         Route::get('dashboard/rebate-trends', [DashboardController::class, 'rebateTrends'])->name('api.v1.dashboard.rebate-trends');

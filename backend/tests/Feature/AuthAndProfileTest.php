@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Modules\Rebate\Models\RebateBalance;
 use App\Modules\Sub2Api\DTO\Sub2ApiUserData;
 use App\Modules\Sub2Api\Repositories\Sub2ApiUserRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AuthAndProfileTest extends TestCase
@@ -41,6 +43,58 @@ class AuthAndProfileTest extends TestCase
         ]);
     }
 
+    public function test_login_can_sync_remote_sub2api_user(): void
+    {
+        config(['sub2rebate.sub2api_base_url' => 'https://sub2api.test']);
+
+        Http::fake([
+            'https://sub2api.test/api/v1/auth/login' => Http::response([
+                'code' => 0,
+                'data' => ['access_token' => 'remote-token'],
+            ]),
+            'https://sub2api.test/api/v1/auth/me' => Http::response([
+                'code' => 0,
+                'data' => [
+                    'id' => 1,
+                    'email' => 'Song@qq.com',
+                    'username' => '',
+                    'role' => 'admin',
+                    'status' => 'active',
+                    'balance' => 100,
+                    'total_recharged' => 10,
+                ],
+            ]),
+        ]);
+
+        $this->app->instance(Sub2ApiUserRepository::class, new class extends Sub2ApiUserRepository {
+            public function findByAccount(string $account): ?Sub2ApiUserData
+            {
+                return null;
+            }
+
+            public function findById(int $id): ?Sub2ApiUserData
+            {
+                return null;
+            }
+        });
+
+        $this->postJson('/api/v1/auth/login', [
+            'account' => 'Song@qq.com',
+            'password' => 'song123',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.user.id', 1)
+            ->assertJsonPath('data.user.email', 'Song@qq.com')
+            ->assertJsonPath('data.user.role', 'admin');
+
+        $this->assertDatabaseHas('users', [
+            'id' => 1,
+            'email' => 'Song@qq.com',
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+    }
+
     public function test_profile_returns_sub2rebate_and_sub2api_invite_links(): void
     {
         $this->fakeSub2ApiUser();
@@ -49,6 +103,13 @@ class AuthAndProfileTest extends TestCase
             'account' => 'demo',
             'password' => 'secret123',
         ])->json('data');
+
+        RebateBalance::query()->create([
+            'user_id' => 1001,
+            'available_amount' => '30',
+            'frozen_amount' => '5',
+            'withdrawn_amount' => '10',
+        ]);
 
         $this->withHeader('Authorization', 'Bearer '.$login['token'])
             ->getJson('/api/v1/account/profile')
@@ -60,6 +121,8 @@ class AuthAndProfileTest extends TestCase
             ->assertJsonPath('data.invite.sub2ApiAffiliatePageUrl', 'https://api.sjiaa.cc.cd/affiliate')
             ->assertJsonPath('data.invite.inviteCode', '')
             ->assertJsonPath('data.invite.inviteUrl', '')
+            ->assertJsonPath('data.balance.availableAmount', '30.00')
+            ->assertJsonPath('data.balance.totalAmount', '35.00')
             ->assertJsonStructure([
                 'data' => [
                     'balance' => [

@@ -40,11 +40,14 @@ class AuthController extends Controller
 
         /** @var User $user */
         $user = $result['user'];
+        $profile = $this->profiles->profile($user);
 
         return ApiResponse::ok([
             'token' => $result['token'],
             'tokenType' => $result['tokenType'],
-            'user' => $this->profiles->userPayload($user, $result['sub2User']),
+            'user' => $profile['user'],
+            'balance' => $profile['balance'],
+            'sub2ApiBalance' => $profile['sub2ApiBalance'],
         ]);
     }
 

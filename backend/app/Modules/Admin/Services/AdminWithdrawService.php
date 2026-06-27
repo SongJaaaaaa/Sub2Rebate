@@ -4,16 +4,19 @@ namespace App\Modules\Admin\Services;
 
 use App\Models\User;
 use App\Modules\Audit\Services\AuditLogService;
+use App\Modules\Payment\Services\AlipayTransferService;
 use App\Modules\Rebate\Models\RebateBalance;
 use App\Modules\Withdraw\Models\WithdrawRecord;
 use App\Support\ApiError;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class AdminWithdrawService
 {
     public function __construct(
         private readonly AdminAccessService $access,
         private readonly AuditLogService $audits,
+        private readonly AlipayTransferService $alipayTransfers,
     ) {
     }
 
@@ -35,6 +38,16 @@ class AdminWithdrawService
         $record->save();
 
         $this->audit($admin, $record, 'withdraw.approve', $before, $remark);
+
+        if ($this->alipayTransfers->autoPayEnabled() && $this->shouldAutoPayout($record)) {
+            $paid = $this->payApproved($admin, $record->refresh(), '审批后自动打款：'.$remark, false);
+
+            return [
+                'ok' => true,
+                'record' => $paid['record'] ?? $record->refresh(),
+                'warning' => ($paid['ok'] ?? false) ? null : ($paid['message'] ?? '自动打款失败'),
+            ];
+        }
 
         return [
             'ok' => true,
@@ -94,7 +107,34 @@ class AdminWithdrawService
             return $this->fail('只有已审核通过的提现可以标记打款');
         }
 
-        return DB::transaction(function () use ($admin, $record, $remark): array {
+        return $this->payApproved($admin, $record, $remark, true);
+    }
+
+    public function autoPayout(WithdrawRecord $record, string $remark = '系统自动打款重试'): array
+    {
+        if (! $this->shouldAutoPayout($record)) {
+            return $this->fail('支付宝自动打款未开启');
+        }
+
+        if ($record->status !== WithdrawRecord::STATUS_APPROVED) {
+            return $this->fail('只有已审核通过的提现可以自动打款');
+        }
+
+        return $this->payApproved(null, $record, $remark, false);
+    }
+
+    private function payApproved(?User $actor, WithdrawRecord $record, string $remark, bool $manualAllowed): array
+    {
+        return DB::transaction(function () use ($actor, $record, $remark, $manualAllowed): array {
+            $record = WithdrawRecord::query()->lockForUpdate()->find($record->id);
+            if (! $record instanceof WithdrawRecord) {
+                return $this->fail('提现记录不存在');
+            }
+
+            if ($record->status !== WithdrawRecord::STATUS_APPROVED) {
+                return $this->fail('只有已审核通过的提现可以标记打款');
+            }
+
             $before = $record->toArray();
             $balance = RebateBalance::query()
                 ->where('user_id', $record->user_id)
@@ -109,17 +149,42 @@ class AdminWithdrawService
                 return $this->fail('冻结余额不足');
             }
 
+            $payout = null;
+            $autoPayout = $this->shouldAutoPayout($record);
+            if (! $autoPayout && ! $manualAllowed) {
+                return $this->fail('支付宝自动打款未开启');
+            }
+
+            if ($autoPayout) {
+                try {
+                    $payout = $this->alipayTransfers->transfer($record);
+                } catch (Throwable $e) {
+                    $record->payout_error = $e->getMessage();
+                    $record->save();
+                    $this->audit($actor, $record, 'withdraw.payout_failed', $before, $remark);
+
+                    return $this->fail($e->getMessage());
+                }
+            }
+
             $balance->frozen_amount = $this->money((float) $balance->frozen_amount - $amount);
             $balance->withdrawn_amount = $this->money((float) $balance->withdrawn_amount + $amount);
             $balance->save();
 
             $record->status = WithdrawRecord::STATUS_PAID;
-            $record->reviewed_by = $admin->id;
+            if ($actor instanceof User) {
+                $record->reviewed_by = $actor->id;
+            }
             $record->reviewed_at = $record->reviewed_at ?? now();
             $record->paid_at = now();
+            if ($autoPayout) {
+                $record->payout_trade_no = is_array($payout) ? (string) ($payout['tradeNo'] ?? $payout['outBizNo'] ?? '') : '';
+                $record->payout_error = null;
+                $record->payout_time = now();
+            }
             $record->save();
 
-            $this->audit($admin, $record, 'withdraw.mark_paid', $before, $remark);
+            $this->audit($actor, $record, 'withdraw.mark_paid', $before, $remark);
 
             return [
                 'ok' => true,
@@ -158,7 +223,7 @@ class AdminWithdrawService
         ];
     }
 
-    private function audit(User $admin, WithdrawRecord $record, string $action, array $before, string $remark): void
+    private function audit(?User $admin, WithdrawRecord $record, string $action, array $before, string $remark): void
     {
         $this->audits->record('withdraw', $action, [
             'actor' => $admin,
@@ -174,5 +239,11 @@ class AdminWithdrawService
     private function money(float|int|string $value): string
     {
         return number_format((float) $value, 6, '.', '');
+    }
+
+    private function shouldAutoPayout(WithdrawRecord $record): bool
+    {
+        return $this->alipayTransfers->enabled()
+            && (string) ($record->type ?: WithdrawRecord::TYPE_ALIPAY) === WithdrawRecord::TYPE_ALIPAY;
     }
 }

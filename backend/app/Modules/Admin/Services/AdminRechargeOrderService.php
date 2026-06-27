@@ -33,6 +33,7 @@ class AdminRechargeOrderService
         }
 
         $sourceId = 'recharge-order-'.$order->order_no;
+        $sub2Before = $this->currentSub2Balance($order->user_id);
 
         try {
             $sub2Res = $this->sub2Api->updateUserBalance(
@@ -42,6 +43,8 @@ class AdminRechargeOrderService
                 '二维码充值 '.$order->order_no,
                 'sub2rebate-'.$sourceId
             );
+            $sub2After = $this->balanceFromResponse($sub2Res)
+                ?? $this->currentSub2Balance($order->user_id);
         } catch (Throwable $e) {
             return [
                 'ok' => false,
@@ -51,7 +54,7 @@ class AdminRechargeOrderService
             ];
         }
 
-        return DB::transaction(function () use ($admin, $order, $remark, $sourceId, $sub2Res): array {
+        return DB::transaction(function () use ($admin, $order, $remark, $sourceId, $sub2Res, $sub2Before, $sub2After): array {
             $before = $order->toArray();
 
             $created = $this->recharges->createRechargeEvent([
@@ -81,6 +84,8 @@ class AdminRechargeOrderService
             $order->paid_at = now();
             $order->credited_at = now();
             $order->credit_status = RechargeOrder::CREDIT_SUCCESS;
+            $order->sub2_balance_before = $sub2Before;
+            $order->sub2_balance_after = $sub2After;
             $order->review_remark = $remark;
             $order->rebate_event_id = $created['rebateEvent']->id ?? null;
             $order->save();
@@ -167,5 +172,24 @@ class AdminRechargeOrderService
     private function money(float|int|string $value): string
     {
         return number_format((float) $value, 6, '.', '');
+    }
+
+    private function currentSub2Balance(int $userId): ?string
+    {
+        try {
+            $res = $this->sub2Api->user($userId);
+            $value = data_get($res, 'data.balance');
+        } catch (Throwable) {
+            return null;
+        }
+
+        return is_numeric($value) ? $this->money($value) : null;
+    }
+
+    private function balanceFromResponse(array $res): ?string
+    {
+        $value = data_get($res, 'data.balance');
+
+        return is_numeric($value) ? $this->money($value) : null;
     }
 }

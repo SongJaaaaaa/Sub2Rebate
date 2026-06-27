@@ -78,6 +78,48 @@ class UserDashboardApiTest extends TestCase
             ->assertJsonPath('data.conversionRate', '0.000000');
     }
 
+    public function test_rebate_records_support_type_status_and_date_filters(): void
+    {
+        $payer = $this->user(1001, 'payer');
+        $receiver = $this->user(1002, 'receiver');
+        $event = RebateEvent::query()->create([
+            'user_id' => $payer->id,
+            'source_type' => 'manual',
+            'source_id' => 'filter-1',
+            'event_type' => 'recharge',
+            'status' => RebateEvent::STATUS_PROCESSED,
+            'source_amount' => '100',
+            'source_currency' => 'CNY',
+            'standard_amount' => '100',
+            'standard_currency' => 'CNY',
+            'credit_amount' => '100',
+            'config_snapshot' => [],
+        ]);
+        $record = RebateRecord::query()->create([
+            'event_id' => $event->id,
+            'payer_user_id' => $payer->id,
+            'receiver_user_id' => $receiver->id,
+            'type' => RebateRecord::TYPE_DECAY,
+            'level' => 1,
+            'source_amount' => '100',
+            'rebate_amount' => '15',
+            'status' => 'confirmed',
+            'config_snapshot' => [],
+            'remark' => '筛选命中',
+        ]);
+        $record->forceFill([
+            'created_at' => '2026-06-26 12:00:00',
+            'updated_at' => '2026-06-26 12:00:00',
+        ])->save();
+
+        $this->withToken($receiver->createToken('test')->plainTextToken)
+            ->getJson('/api/v1/rebate/records?type=decay&status=confirmed&startDate=2026-06-26&endDate=2026-06-26')
+            ->assertOk()
+            ->assertJsonPath('data.total', 1)
+            ->assertJsonPath('data.list.0.sourceUserName', 'payer')
+            ->assertJsonPath('data.list.0.remark', '筛选命中');
+    }
+
     private function fakeSub2Users(): void
     {
         $this->app->instance(Sub2ApiUserRepository::class, new class extends Sub2ApiUserRepository {

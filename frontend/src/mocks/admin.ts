@@ -3,7 +3,7 @@ import type { AdminUser, AdminWithdrawRecord, RebateConfig, AdminDashboardStats,
 export const mockAdminUsers: AdminUser[] = [
   { id: 1001, username: 'u1', nickname: '测试用户1', email: 'u1@example.com', avatar: '', role: 'user', createdAt: '2026-06-01 10:00:00', status: 'active', parentNickname: '上级用户', directInviteCount: 4, totalRebateAmount: '15880.00', totalPaidAmount: '5000.00' },
   { id: 1002, username: 'u2', nickname: '测试用户2', email: 'u2@example.com', avatar: '', role: 'user', createdAt: '2026-06-10 08:30:00', status: 'active', parentNickname: '测试用户1', directInviteCount: 3, totalRebateAmount: '300.00', totalPaidAmount: '300.00' },
-  { id: 1003, username: 'u3', nickname: '测试用户3', email: 'u3@example.com', avatar: '', role: 'user', createdAt: '2026-06-11 14:00:00', status: 'active', parentNickname: '测试用户1', directInviteCount: 2, totalRebateAmount: '0.00', totalPaidAmount: '150.00' },
+  { id: 1003, username: 'u3', nickname: '测试用户3', email: 'u3@example.com', avatar: '', role: 'user', createdAt: '2026-06-11 14:00:00', status: 'active', rebateStatus: 'disabled', rebateDisabledReason: 'lie_flat', parentNickname: '测试用户1', directInviteCount: 2, totalRebateAmount: '0.00', totalPaidAmount: '150.00' },
   { id: 1004, username: 'u4', nickname: '测试用户4', email: 'u4@example.com', avatar: '', role: 'user', createdAt: '2026-06-12 10:20:00', status: 'banned', parentNickname: '测试用户1', directInviteCount: 1, totalRebateAmount: '50.00', totalPaidAmount: '200.00' },
   { id: 1005, username: 'u5', nickname: '测试用户5', email: 'u5@example.com', avatar: '', role: 'user', createdAt: '2026-06-12 16:00:00', status: 'active', parentNickname: '测试用户2', directInviteCount: 2, totalRebateAmount: '0.00', totalPaidAmount: '80.00' },
   { id: 1006, username: 'u6', nickname: '测试用户6', email: 'u6@example.com', avatar: '', role: 'user', createdAt: '2026-06-12 17:00:00', status: 'active', parentNickname: '测试用户2', directInviteCount: 1, totalRebateAmount: '0.00', totalPaidAmount: '60.00' },
@@ -15,10 +15,10 @@ export const mockAdminUsers: AdminUser[] = [
 ]
 
 export const mockAdminWithdrawals: AdminWithdrawRecord[] = [
-  { id: 7001, userId: 1001, username: 'demo', nickname: '演示用户', amount: '100.00', status: 'paid', accountType: 'alipay', accountNo: 'demo@example.com', realName: '张三', remark: '', rejectReason: '', paidAt: '2026-06-12 18:00:00', createdAt: '2026-06-12 14:00:00' },
-  { id: 7002, userId: 1001, username: 'demo', nickname: '演示用户', amount: '200.00', status: 'pending', accountType: 'alipay', accountNo: 'demo@example.com', realName: '张三', remark: '', rejectReason: '', paidAt: null, createdAt: '2026-06-13 09:20:00' },
-  { id: 7003, userId: 1008, username: 'userB', nickname: '下级用户B', amount: '80.00', status: 'pending', accountType: 'alipay', accountNo: 'userb@alipay.com', realName: '李四', remark: '急用', rejectReason: '', paidAt: null, createdAt: '2026-06-13 11:00:00' },
-  { id: 7004, userId: 1009, username: 'userC', nickname: '下级用户C', amount: '50.00', status: 'rejected', accountType: 'alipay', accountNo: 'userc@alipay.com', realName: '王五', remark: '', rejectReason: '账号信息有误', paidAt: null, createdAt: '2026-06-11 16:00:00' },
+  { id: 7001, type: 'alipay', userId: 1001, username: 'demo', nickname: '演示用户', amount: '100.00', status: 'paid', accountType: 'alipay', accountNo: 'demo@example.com', realName: '张三', sub2ApiBalanceBefore: null, sub2ApiBalanceAfter: null, remark: '', rejectReason: '', payoutTradeNo: '202606120001', payoutError: '', payoutTime: '2026-06-12 18:00:00', paidAt: '2026-06-12 18:00:00', createdAt: '2026-06-12 14:00:00' },
+  { id: 7002, type: 'alipay', userId: 1001, username: 'demo', nickname: '演示用户', amount: '200.00', status: 'pending', accountType: 'alipay', accountNo: 'demo@example.com', realName: '张三', sub2ApiBalanceBefore: null, sub2ApiBalanceAfter: null, remark: '', rejectReason: '', payoutTradeNo: '', payoutError: '', payoutTime: null, paidAt: null, createdAt: '2026-06-13 09:20:00' },
+  { id: 7003, type: 'alipay', userId: 1008, username: 'userB', nickname: '下级用户B', amount: '80.00', status: 'pending', accountType: 'alipay', accountNo: 'userb@alipay.com', realName: '李四', sub2ApiBalanceBefore: null, sub2ApiBalanceAfter: null, remark: '急用', rejectReason: '', payoutTradeNo: '', payoutError: '', payoutTime: null, paidAt: null, createdAt: '2026-06-13 11:00:00' },
+  { id: 7004, type: 'alipay', userId: 1009, username: 'userC', nickname: '下级用户C', amount: '50.00', status: 'rejected', accountType: 'alipay', accountNo: 'userc@alipay.com', realName: '王五', sub2ApiBalanceBefore: null, sub2ApiBalanceAfter: null, remark: '', rejectReason: '账号信息有误', payoutTradeNo: '', payoutError: '', payoutTime: null, paidAt: null, createdAt: '2026-06-11 16:00:00' },
 ]
 
 export const mockRebateConfig: RebateConfig = {
@@ -47,14 +47,19 @@ export const mockFullRebateConfig: FullRebateConfig = {
     totalPoolRate: '15',
     decayCoefficient: '0.5',
     maxDepth: 5,
+    inactiveNodeMode: 'platform',
   },
   withdrawLimit: {
     minAmount: '100.00',
     cooldownHours: 24,
+    dailyLimit: 1,
   },
   riskControl: {
     blacklistEnabled: true,
     autoFreezeThreshold: 50,
+    lieFlatEnabled: true,
+    lieFlatDays: 7,
+    lieFlatRestoreMinRecharge: '10',
   },
   lastModifiedBy: 'admin_01',
   lastModifiedAt: '2023-11-24 14:20',
@@ -130,6 +135,8 @@ export const mockRelationshipTree: RelationshipNode = {
       totalRecharge: '2100.00',
       directReferrals: 2,
       status: 'warning',
+      rebateStatus: 'disabled',
+      rebateDisabledReason: 'lie_flat',
       children: [
         { id: 1007, username: 'u7', nickname: '测试用户7', avatar: '', level: 'Referral L2', totalRecharge: '860.00', directReferrals: 1, status: 'active', children: [
           { id: 1013, username: 'u13', nickname: '测试用户13', avatar: '', level: 'Referral L3', totalRecharge: '160.00', directReferrals: 0, status: 'active' },

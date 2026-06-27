@@ -48,9 +48,10 @@ contribution  贡献系数配置（第一版只预留，不启用）
 | rebate.pool_ratio | 0.15 | 返利池比例，充值 100 元返利池为 15 元 |
 | rebate.mode | decay | 分发模式：decay 衰减系数模式 |
 | rebate.decay_factor | 0.4 | 衰减系数，每增加一级权重乘以该值，越小则上级集中度越高 |
-| rebate.normalize | true | 归一化：将返利池全部分配给有效上级，不留归平台 |
+| rebate.normalize | true | 归一化：无失效节点时将返利池全部分配给有效上级 |
+| rebate.inactive_node_mode | platform | 失效节点返利处理方式：platform 归平台；exclude_recalculate 排除失效节点后重算 |
 
-说明：不设最大层级限制，按实际邀请链路的所有上级计算，无限级金字塔结构。深层级通过衰减系数自然递减到极小值。
+说明：不设最大层级限制，按实际邀请链路的所有上级计算，无限级金字塔结构。深层级通过衰减系数自然递减到极小值。邀请链路中存在返利失效节点时，按 `rebate.inactive_node_mode` 决定该节点对应金额归平台，还是排除后对剩余上级重新归一化。
 
 ### 4.3 充值金额配置
 
@@ -75,6 +76,8 @@ contribution  贡献系数配置（第一版只预留，不启用）
 |---|---:|---|
 | risk.blacklist_enabled | true | 是否启用黑名单 |
 | risk.duplicate_check | true | 防重复发放检查 |
+| risk.lie_flat_enabled | true | 是否启用轻量防躺平检测 |
+| risk.lie_flat_days | 7 | 连续多少天无充值、余额无减少、无新增下级后置灰并暂停返利资格 |
 
 ## 5. 核心要求
 
@@ -100,6 +103,8 @@ contribution  贡献系数配置（第一版只预留，不启用）
 ## 7. 待实现
 
 - 金额换算配置快照写入充值事件。
+- `rebate.inactive_node_mode` 默认配置、校验、接口返回和配置中心 Tooltip。
+- `risk.lie_flat_enabled`、`risk.lie_flat_days` 默认配置、校验、接口返回和配置中心 Tooltip。
 
 ## 8. 开发记录
 

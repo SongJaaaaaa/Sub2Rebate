@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import AppCard from '@/components/common/AppCard.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
-import { createRechargeOrder, getRechargeConfig, getRechargeOrders, submitRechargeOrder } from '@/api/recharge'
+import { createRechargeOrder, getRechargeConfig, getRechargeOrder, getRechargeOrders, submitRechargeOrder, syncEpayReturn } from '@/api/recharge'
 import { money } from '@/utils/money'
 import { getRechargeStatus } from '@/utils/status'
-import type { RechargeConfig, RechargeOrder } from '@/types/recharge'
+import type { RechargeConfig, RechargeOrder, EpayReturnReq } from '@/types/recharge'
 
 const packages = [
   { id: 1, amount: 50, bonus: 0, label: '¥50' },
@@ -23,12 +23,34 @@ const customAmount = ref('')
 const useCustom = ref(false)
 const loading = ref(false)
 const submitLoading = ref(false)
+const syncingReturn = ref(false)
 const cfg = ref<RechargeConfig | null>(null)
 const curOrder = ref<RechargeOrder | null>(null)
 const recent = ref<RechargeOrder[]>([])
+const detailOrder = ref<RechargeOrder | null>(null)
+const detailVisible = ref(false)
 const payerName = ref('')
 const payerAccount = ref('')
 const resultText = ref('已提交支付信息，等待管理员审核到账。')
+const isEpay = computed(() => curOrder.value?.channel === 'epay')
+const epayReturnKeys = ['pid', 'trade_no', 'out_trade_no', 'type', 'name', 'money', 'trade_status', 'sign']
+const orderTimer = ref<number | null>(null)
+const orderPagination = ref({ page: 1, pageSize: 10, total: 0 })
+const statusFilter = ref('')
+const dateRange = ref<[string, string] | null>(null)
+
+const statusOptions = [
+  { label: '全部', value: '' },
+  { label: '待支付', value: 'pending' },
+  { label: '待审核', value: 'submitted' },
+  { label: '入账中', value: 'paid' },
+  { label: '已到账', value: 'approved' },
+  { label: '入账失败', value: 'failed' },
+  { label: '已拒绝', value: 'rejected' },
+  { label: '已过期', value: 'expired' },
+]
+
+const terminalStatuses = ['approved', 'failed', 'rejected', 'expired']
 
 const finalAmount = computed(() => {
   if (useCustom.value) return parseFloat(customAmount.value) || 0
@@ -55,20 +77,28 @@ const selectPackage = (pkg: typeof packages[0]) => {
 const fetchBase = async () => {
   loading.value = true
   try {
-    const [cfgRes, orderRes] = await Promise.all([
-      getRechargeConfig(),
-      getRechargeOrders(1, 10),
-    ])
+    const [cfgRes, orderRes] = await Promise.all([getRechargeConfig(), fetchOrders(orderPagination.value.page)])
     if (cfgRes.code === 0) cfg.value = cfgRes.data
-    if (orderRes.code === 0) recent.value = orderRes.data.list
   } finally {
     loading.value = false
   }
 }
 
+const fetchOrders = async (page = 1) => {
+  orderPagination.value.page = page
+  const [startDate, endDate] = dateRange.value || []
+  const res = await getRechargeOrders(page, orderPagination.value.pageSize, statusFilter.value || undefined, startDate, endDate)
+  if (res.code === 0) {
+    recent.value = res.data.list
+    orderPagination.value.page = res.data.page
+    orderPagination.value.total = res.data.total
+  }
+  return res
+}
+
 const createOrder = async () => {
-  if (finalAmount.value < 10) {
-    ElMessage.warning('最低充值金额为 ¥10')
+  if (finalAmount.value <= 0) {
+    ElMessage.warning('请输入充值金额')
     return
   }
   loading.value = true
@@ -79,6 +109,10 @@ const createOrder = async () => {
       payerName.value = ''
       payerAccount.value = ''
       step.value = 'pay'
+      if (res.data.channel === 'epay' && res.data.payUrl) {
+        startOrderPolling(res.data.id)
+        window.location.href = res.data.payUrl
+      }
     }
   } finally {
     loading.value = false
@@ -108,19 +142,124 @@ const submitOrder = async () => {
   }
 }
 
+const refreshOrder = async () => {
+  if (!curOrder.value) return
+  const res = await getRechargeOrder(curOrder.value.id)
+  if (res.code === 0) {
+    curOrder.value = res.data
+    if (terminalStatuses.includes(res.data.status)) {
+      stopOrderPolling()
+      resultText.value = '支付已完成，额度已自动入账。'
+      step.value = 'result'
+      await fetchBase()
+    }
+  }
+}
+
+const returnPayload = (): EpayReturnReq | null => {
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('trade_status') !== 'TRADE_SUCCESS') return null
+  if (!epayReturnKeys.every((key) => !!params.get(key))) return null
+
+  return {
+    pid: params.get('pid') || '',
+    trade_no: params.get('trade_no') || '',
+    out_trade_no: params.get('out_trade_no') || '',
+    type: params.get('type') || '',
+    name: params.get('name') || '',
+    money: params.get('money') || '',
+    trade_status: params.get('trade_status') || '',
+    sign: params.get('sign') || '',
+    sign_type: params.get('sign_type') || '',
+  }
+}
+
+const clearReturnQuery = () => {
+  window.history.replaceState(null, document.title, window.location.pathname)
+}
+
+const syncReturn = async () => {
+  const payload = returnPayload()
+  if (!payload) return
+
+  syncingReturn.value = true
+  try {
+    const res = await syncEpayReturn(payload)
+    if (res.code === 0) {
+      curOrder.value = res.data
+      resultText.value = res.data.status === 'approved'
+        ? '支付已完成，额度已自动入账。'
+        : '支付已确认，正在等待额度入账。'
+      step.value = 'result'
+      if (!terminalStatuses.includes(res.data.status)) startOrderPolling(res.data.id)
+      ElMessage.success('Epay 支付状态已同步')
+    }
+  } catch {
+    ElMessage.warning('Epay 支付已返回，本地入账同步失败，请查看最近订单备注')
+  } finally {
+    clearReturnQuery()
+    syncingReturn.value = false
+  }
+}
+
+const openPayUrl = () => {
+  if (curOrder.value?.payUrl) window.location.href = curOrder.value.payUrl
+}
+
 const reset = () => {
+  stopOrderPolling()
   step.value = 'select'
   curOrder.value = null
   payerName.value = ''
   payerAccount.value = ''
 }
 
-onMounted(() => fetchBase())
+const startOrderPolling = (id: number) => {
+  stopOrderPolling()
+  orderTimer.value = window.setInterval(async () => {
+    const res = await getRechargeOrder(id)
+    if (res.code !== 0) return
+    curOrder.value = res.data
+    if (terminalStatuses.includes(res.data.status)) {
+      stopOrderPolling()
+      resultText.value = res.data.status === 'approved' ? '支付已完成，额度已自动入账。' : '充值订单状态已更新。'
+      step.value = 'result'
+      await fetchOrders()
+    }
+  }, 5000)
+}
+
+const stopOrderPolling = () => {
+  if (orderTimer.value !== null) {
+    window.clearInterval(orderTimer.value)
+    orderTimer.value = null
+  }
+}
+
+const onFilterChange = () => fetchOrders(1)
+
+const copyOrderNo = async (orderNo: string) => {
+  await navigator.clipboard.writeText(orderNo)
+  ElMessage.success('订单号已复制')
+}
+
+const showDetail = async (row: RechargeOrder) => {
+  const res = await getRechargeOrder(row.id)
+  detailOrder.value = res.code === 0 ? res.data : row
+  detailVisible.value = true
+}
+
+onMounted(async () => {
+  await syncReturn()
+  await fetchBase()
+})
+
+onBeforeUnmount(() => stopOrderPolling())
 </script>
 
 <template>
-  <div class="space-y-6" v-loading="loading">
-    <PageHeader title="额度充值" description="使用支付宝收款码充值，提交付款信息后由管理员审核到账。" />
+  <div class="space-y-6" v-loading="loading || syncingReturn">
+    <PageHeader title="额度充值" description="选择充值金额并完成支付，到账后自动增加 API 额度。" />
 
     <div v-if="cfg && !cfg.enabled" class="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
       当前未开启二维码充值，请联系管理员。
@@ -145,7 +284,7 @@ onMounted(() => fetchBase())
 
         <div class="mt-4">
           <button class="mb-2 text-sm font-semibold text-[var(--sr-secondary)]" @click="useCustom = true">自定义金额 ›</button>
-          <el-input v-if="useCustom" v-model="customAmount" placeholder="输入充值金额 (最低 ¥10)" style="width: 220px">
+          <el-input v-if="useCustom" v-model="customAmount" placeholder="输入充值金额" style="width: 220px">
             <template #prefix><span class="font-bold text-[var(--sr-muted)]">¥</span></template>
           </el-input>
         </div>
@@ -165,12 +304,6 @@ onMounted(() => fetchBase())
           </div>
         </div>
 
-        <div class="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-          <div class="font-semibold">收款方式：支付宝二维码</div>
-          <div class="mt-1">{{ cfg?.displayName || '支付宝收款码' }}</div>
-          <div class="mt-1 text-xs">{{ cfg?.note }}</div>
-        </div>
-
         <div class="mt-6">
           <el-button type="primary" size="large" :disabled="!cfg?.enabled" class="w-full" @click="createOrder">
             创建充值订单 ¥{{ finalAmount.toFixed(2) }}
@@ -181,30 +314,41 @@ onMounted(() => fetchBase())
 
     <template v-else-if="step === 'pay' && curOrder">
       <AppCard class="mx-auto max-w-md text-center">
-        <h3 class="mb-2 text-lg font-bold">支付宝扫码支付</h3>
-        <p class="mb-4 text-sm text-[var(--sr-muted)]">请使用支付宝扫描下方二维码，并备注订单号完成支付</p>
+        <h3 class="mb-2 text-lg font-bold">扫码支付</h3>
+        <p class="mb-4 text-sm text-[var(--sr-muted)]">
+          {{ isEpay ? '请在 Epay 支付页面完成支付，成功后会自动入账。' : '请使用支付宝扫描下方二维码，并备注订单号完成支付' }}
+        </p>
 
-        <img v-if="curOrder.qrUrl" :src="curOrder.qrUrl" alt="支付宝收款码" class="mx-auto h-64 w-64 rounded-lg border border-[var(--sr-border)] object-cover" />
-        <div v-else class="mx-auto flex h-64 w-64 items-center justify-center rounded-lg border border-dashed border-[var(--sr-border)] text-sm text-[var(--sr-muted)]">
+        <img v-if="!isEpay && curOrder.qrUrl" :src="curOrder.qrUrl" alt="支付宝收款码" class="mx-auto h-64 w-64 rounded-lg border border-[var(--sr-border)] object-cover" />
+        <div v-else-if="!isEpay" class="mx-auto flex h-64 w-64 items-center justify-center rounded-lg border border-dashed border-[var(--sr-border)] text-sm text-[var(--sr-muted)]">
           暂未配置收款二维码
+        </div>
+        <div v-else class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-5 text-sm text-blue-700">
+          <div class="font-semibold">订单已创建</div>
+          <div class="mt-2">如果没有自动跳转，请点击下方按钮前往支付页面。</div>
         </div>
 
         <div class="mt-4 rounded-lg bg-[var(--sr-surface-low)] p-3 text-left text-sm">
           <div class="flex justify-between gap-3"><span class="text-[var(--sr-muted)]">订单号</span><span class="font-mono text-xs">{{ curOrder.orderNo }}</span></div>
+          <div v-if="curOrder.outTradeNo" class="mt-2 flex justify-between gap-3"><span class="text-[var(--sr-muted)]">支付单号</span><span class="font-mono text-xs">{{ curOrder.outTradeNo }}</span></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">支付金额</span><span class="font-bold text-[var(--sr-secondary)]">¥{{ curOrder.amount }}</span></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">预计到账</span><span class="font-bold text-green-600">¥{{ curOrder.creditAmount }}</span></div>
-          <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">收款方</span><span>{{ curOrder.displayName || '支付宝收款码' }}</span></div>
+          <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">收款方</span><span>{{ curOrder.displayName || (isEpay ? 'Epay 当面付' : '支付宝收款码') }}</span></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">有效期</span><span>{{ curOrder.expireAt }}</span></div>
         </div>
 
-        <div class="mt-4 space-y-3 text-left">
+        <div v-if="!isEpay" class="mt-4 space-y-3 text-left">
           <el-input v-model="payerName" placeholder="付款姓名，例如 张三" />
           <el-input v-model="payerAccount" placeholder="付款账号，例如 138****1234 / alipay账号" />
         </div>
 
         <div class="mt-4 flex justify-center gap-3">
           <el-button @click="reset">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="submitOrder">我已完成支付</el-button>
+          <template v-if="isEpay">
+            <el-button type="primary" @click="openPayUrl">前往支付</el-button>
+            <el-button @click="refreshOrder">刷新状态</el-button>
+          </template>
+          <el-button v-else type="primary" :loading="submitLoading" @click="submitOrder">我已完成支付</el-button>
         </div>
       </AppCard>
     </template>
@@ -216,6 +360,7 @@ onMounted(() => fetchBase())
         <p class="mt-2 text-sm text-[var(--sr-muted)]">{{ resultText }}</p>
         <div class="mt-4 rounded-lg bg-[var(--sr-surface-low)] p-4 text-left text-sm">
           <div class="flex justify-between"><span class="text-[var(--sr-muted)]">订单号</span><span class="font-mono text-xs">{{ curOrder.orderNo }}</span></div>
+          <div v-if="curOrder.outTradeNo" class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">支付单号</span><span class="font-mono text-xs">{{ curOrder.outTradeNo }}</span></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">状态</span><StatusTag :text="getRechargeStatus(curOrder.status).text" :type="getRechargeStatus(curOrder.status).type" /></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">到账额度</span><span class="font-bold text-green-600">¥{{ curOrder.creditAmount }}</span></div>
         </div>
@@ -227,17 +372,44 @@ onMounted(() => fetchBase())
     </template>
 
     <AppCard>
-      <div class="mb-4 flex items-center justify-between">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 class="text-sm font-bold">最近充值订单</h3>
-        <span class="text-xs text-[var(--sr-muted)]">管理员确认到账后会自动增加 API 额度</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <el-select v-model="statusFilter" placeholder="状态" clearable size="small" style="width: 120px" @change="onFilterChange">
+            <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
+          <el-date-picker
+            v-model="dateRange"
+            type="daterange"
+            size="small"
+            value-format="YYYY-MM-DD"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            style="width: 240px"
+            @change="onFilterChange"
+          />
+        </div>
       </div>
       <el-table :data="recent" style="width: 100%">
-        <el-table-column prop="orderNo" label="订单号" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="amount" label="实付金额" width="100">
-          <template #default="{ row }">{{ money(row.amount) }}</template>
+        <el-table-column prop="orderNo" label="订单号" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <button class="font-mono text-xs text-[var(--sr-primary)] hover:underline" @click="copyOrderNo(row.orderNo)">{{ row.orderNo }}</button>
+          </template>
         </el-table-column>
-        <el-table-column prop="creditAmount" label="到账额度" width="100">
-          <template #default="{ row }">{{ money(row.creditAmount) }}</template>
+        <el-table-column prop="channel" label="通道" width="120">
+          <template #default="{ row }">{{ row.channel === 'epay' ? 'Epay' : '支付宝' }}</template>
+        </el-table-column>
+        <el-table-column label="实付金额/初始额度" min-width="150">
+          <template #default="{ row }">
+            <div class="font-semibold">{{ money(row.paidAmount || row.amount) }}</div>
+            <div class="mt-1 text-xs text-[var(--sr-muted)]">初始：{{ row.sub2BalanceBefore ? money(row.sub2BalanceBefore) : '-' }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="到账额度/充值后额度" min-width="160">
+          <template #default="{ row }">
+            <div class="font-semibold text-green-600">{{ money(row.creditAmount) }}</div>
+            <div class="mt-1 text-xs text-[var(--sr-muted)]">充值后：{{ row.sub2BalanceAfter ? money(row.sub2BalanceAfter) : '-' }}</div>
+          </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
@@ -245,8 +417,55 @@ onMounted(() => fetchBase())
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="160" />
-        <el-table-column prop="reviewRemark" label="备注" min-width="180" show-overflow-tooltip />
+        <el-table-column label="备注" min-width="220" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.remark || row.reviewRemark || row.creditFailMsg || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="操作" width="90" fixed="right">
+          <template #default="{ row }">
+            <el-button text type="primary" size="small" @click="showDetail(row)">详情</el-button>
+          </template>
+        </el-table-column>
       </el-table>
+
+      <div v-if="orderPagination.total > orderPagination.pageSize" class="mt-4 flex justify-end">
+        <el-pagination
+          v-model:current-page="orderPagination.page"
+          :page-size="orderPagination.pageSize"
+          :total="orderPagination.total"
+          layout="prev, pager, next"
+          @current-change="fetchOrders"
+        />
+      </div>
     </AppCard>
+
+    <el-drawer v-model="detailVisible" title="充值订单详情" size="420px">
+      <el-descriptions v-if="detailOrder" :column="1" border>
+        <el-descriptions-item label="订单号">
+          <button class="font-mono text-xs text-[var(--sr-primary)] hover:underline" @click="copyOrderNo(detailOrder.orderNo)">{{ detailOrder.orderNo }}</button>
+        </el-descriptions-item>
+        <el-descriptions-item label="支付单号">{{ detailOrder.outTradeNo || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="第三方流水">{{ detailOrder.providerTradeNo || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="通道">{{ detailOrder.channel === 'epay' ? 'Epay' : '支付宝' }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <StatusTag :text="getRechargeStatus(detailOrder.status).text" :type="getRechargeStatus(detailOrder.status).type" />
+        </el-descriptions-item>
+        <el-descriptions-item label="支付状态">{{ detailOrder.tradeStatus || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="入账状态">{{ detailOrder.creditStatus || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="充值金额">{{ money(detailOrder.amount) }}</el-descriptions-item>
+        <el-descriptions-item label="实付金额">{{ detailOrder.paidAmount ? money(detailOrder.paidAmount) : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="到账额度">{{ money(detailOrder.creditAmount) }}</el-descriptions-item>
+        <el-descriptions-item label="充值前额度">{{ detailOrder.sub2BalanceBefore ? money(detailOrder.sub2BalanceBefore) : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="充值后额度">{{ detailOrder.sub2BalanceAfter ? money(detailOrder.sub2BalanceAfter) : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="付款人">{{ detailOrder.payerName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="付款账号">{{ detailOrder.payerAccount || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ detailOrder.createdAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="提交时间">{{ detailOrder.submittedAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="支付时间">{{ detailOrder.paidAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="审核时间">{{ detailOrder.reviewedAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="入账时间">{{ detailOrder.creditedAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="有效期">{{ detailOrder.expireAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="备注">{{ detailOrder.remark || detailOrder.reviewRemark || detailOrder.creditFailMsg || '-' }}</el-descriptions-item>
+      </el-descriptions>
+    </el-drawer>
   </div>
 </template>
