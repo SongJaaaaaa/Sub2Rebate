@@ -12,6 +12,7 @@ import { useWithdrawStore } from '@/stores/withdraw'
 import { useAuthStore } from '@/stores/auth'
 import { money } from '@/utils/money'
 import { getWithdrawStatus } from '@/utils/status'
+import { pageSizes } from '@/constants/pagination'
 
 const withdraw = useWithdrawStore()
 const auth = useAuthStore()
@@ -135,6 +136,11 @@ const handlePageChange = (page: number) => {
   fetchRecords(page)
 }
 
+const handleSizeChange = (size: number) => {
+  pagination.value.pageSize = size
+  fetchRecords(1)
+}
+
 onMounted(() => refreshPage())
 </script>
 
@@ -241,13 +247,15 @@ onMounted(() => refreshPage())
 
         <EmptyState v-if="!withdraw.records.length && !withdraw.loading" title="暂无提现记录" description="提交提现申请后，记录会显示在这里" />
 
-        <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
+        <div class="mt-4 flex justify-end">
           <el-pagination
             v-model:current-page="pagination.page"
-            :page-size="pagination.pageSize"
+            v-model:page-size="pagination.pageSize"
+            :page-sizes="pageSizes"
             :total="pagination.total"
-            layout="prev, pager, next"
+            layout="total, sizes, prev, pager, next, jumper"
             @current-change="handlePageChange"
+            @size-change="handleSizeChange"
           />
         </div>
       </AppCard>

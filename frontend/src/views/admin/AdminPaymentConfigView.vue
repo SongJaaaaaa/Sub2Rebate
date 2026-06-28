@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import AppCard from '@/components/common/AppCard.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -8,6 +8,7 @@ import type { AdminPaymentConfig } from '@/types/admin'
 
 const loading = ref(false)
 const saving = ref(false)
+const savedSnapshot = ref('')
 
 const form = reactive<AdminPaymentConfig>({
   enabled: true,
@@ -18,6 +19,8 @@ const form = reactive<AdminPaymentConfig>({
   note: '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。',
   expireMinutes: 15,
   creditRate: '1',
+  rechargeName: '额度充值',
+  feeRate: '0.6',
   withdrawDailyLimit: 1,
   epay: {
     enabled: false,
@@ -50,11 +53,20 @@ const form = reactive<AdminPaymentConfig>({
   },
 })
 
+const snapshot = () => JSON.stringify(form)
+const isDirty = computed(() => !!savedSnapshot.value && snapshot() !== savedSnapshot.value)
+const markSaved = () => {
+  savedSnapshot.value = snapshot()
+}
+
 const fetchConfig = async () => {
   loading.value = true
   try {
     const res = await getAdminPaymentConfig()
-    if (res.code === 0) Object.assign(form, res.data)
+    if (res.code === 0) {
+      Object.assign(form, res.data)
+      markSaved()
+    }
   } finally {
     loading.value = false
   }
@@ -99,6 +111,8 @@ const onSave = async () => {
       displayName: form.displayName.trim(),
       note: form.note.trim(),
       creditRate: String(form.creditRate).trim(),
+      rechargeName: form.rechargeName.trim() || '额度充值',
+      feeRate: String(form.feeRate).trim() || '0',
       withdrawDailyLimit: Number(form.withdrawDailyLimit || 1),
       epay: {
         ...form.epay,
@@ -127,6 +141,7 @@ const onSave = async () => {
     })
     if (res.code === 0) {
       Object.assign(form, res.data)
+      markSaved()
       ElMessage.success('支付配置已保存')
     }
   } finally {
@@ -139,7 +154,7 @@ onMounted(() => fetchConfig())
 
 <template>
   <div class="space-y-6" v-loading="loading">
-    <PageHeader title="支付配置" description="配置支付宝二维码收款信息，用户充值页会直接读取这里的内容。">
+    <PageHeader title="支付配置" description="配置充值通道、账单名称和手续费，用户充值页会直接读取这里的内容。">
       <template #actions>
         <el-button type="primary" :loading="saving" @click="onSave">保存配置</el-button>
       </template>
@@ -247,6 +262,18 @@ onMounted(() => fetchConfig())
               <label class="mb-2 block text-sm font-semibold">人民币额度换算比例</label>
               <el-input v-model="form.creditRate" placeholder="1">
                 <template #append>1 元 = ? 额度</template>
+              </el-input>
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold">充值商品名称</label>
+              <el-input v-model="form.rechargeName" placeholder="额度充值" />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-semibold">收款手续费比例</label>
+              <el-input v-model="form.feeRate" placeholder="0.6">
+                <template #append>%</template>
               </el-input>
             </div>
 
@@ -362,6 +389,8 @@ onMounted(() => fetchConfig())
             <div>通道：{{ form.mode === 'epay' ? 'Epay 当面付' : '支付宝二维码' }}</div>
             <div>订单有效期：{{ form.expireMinutes }} 分钟</div>
             <div>换算比例：1 元 = {{ form.creditRate || '1' }} 额度</div>
+            <div>商品名称：{{ form.rechargeName || '额度充值' }}</div>
+            <div>收款手续费：{{ (parseFloat(form.feeRate || '0') || 0).toFixed(2) }}%</div>
             <div>自动打款：{{ form.alipayTransfer.enabled ? '开启' : '关闭' }}</div>
             <div>审批即打款：{{ form.alipayTransfer.autoPayEnabled ? '开启' : '关闭' }}</div>
             <div>失败重试：{{ form.alipayTransfer.retryEnabled ? '开启' : '关闭' }}</div>
@@ -378,5 +407,20 @@ onMounted(() => fetchConfig())
         </div>
       </AppCard>
     </div>
+
+    <transition name="el-zoom-in-bottom">
+      <div
+        v-if="isDirty && !loading"
+        class="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--sr-border)] bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur"
+      >
+        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="text-sm font-bold text-[var(--sr-primary)]">支付配置有未保存修改</div>
+            <div class="mt-0.5 text-xs text-[var(--sr-muted)]">保存后用户充值页才会读取最新通道、费率和提示文案。</div>
+          </div>
+          <el-button type="primary" :loading="saving" @click="onSave">保存配置</el-button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>

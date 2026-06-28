@@ -1,14 +1,21 @@
 import { request } from '@/utils/request'
 import { useMock, delay } from '@/mocks'
 import type { ApiRes, PageRes } from '@/types/api'
-import type { RechargeConfig, RechargeOrder, AdminRechargeOrder, CreateRechargeOrderReq, SubmitRechargeOrderReq, EpayReturnReq } from '@/types/recharge'
+import type { RechargeBonusPackage, RechargeConfig, RechargeOrder, AdminRechargeOrder, CreateRechargeOrderReq, SubmitRechargeOrderReq, EpayReturnReq } from '@/types/recharge'
+
+const bonusPackages: RechargeBonusPackage[] = [
+  { amount: '100.00', bonus: '5.00' },
+  { amount: '200.00', bonus: '15.00' },
+  { amount: '500.00', bonus: '50.00' },
+  { amount: '1000.00', bonus: '120.00' },
+]
 
 const calcBonus = (amount: number) => {
-  if (amount >= 1000) return 120
-  if (amount >= 500) return 50
-  if (amount >= 200) return 15
-  if (amount >= 100) return 5
-  return 0
+  let bonus = 0
+  bonusPackages.forEach((item) => {
+    if (amount >= Number(item.amount || 0)) bonus = Number(item.bonus || 0)
+  })
+  return bonus
 }
 
 const mockConfig: RechargeConfig = {
@@ -19,11 +26,16 @@ const mockConfig: RechargeConfig = {
   displayName: '支付宝收款码',
   note: '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。',
   expireMinutes: 15,
+  rechargeName: '额度充值',
+  feeRate: '0.6',
+  bonusPackages,
 }
 
 const mockOrder = (amount: string | number): RechargeOrder => {
   const val = Number(amount)
   const bonus = calcBonus(val)
+  const fee = Math.round(val * Number(mockConfig.feeRate)) / 100
+  const payable = val + fee
 
   return {
     id: Date.now(),
@@ -31,8 +43,11 @@ const mockOrder = (amount: string | number): RechargeOrder => {
     channel: 'alipay',
     outTradeNo: '',
     providerTradeNo: '',
-    subject: `API充值-${val.toFixed(2)}元`,
+    subject: `${mockConfig.rechargeName}-${val.toFixed(2)}元`,
     amount: val.toFixed(2),
+    feeRate: mockConfig.feeRate,
+    feeAmount: fee.toFixed(2),
+    payableAmount: payable.toFixed(2),
     bonusAmount: bonus.toFixed(2),
     creditAmount: (val + bonus).toFixed(2),
     paidAmount: '',
@@ -58,6 +73,7 @@ const mockOrder = (amount: string | number): RechargeOrder => {
     qrUrl: mockConfig.qrUrl,
     displayName: mockConfig.displayName,
     note: mockConfig.note,
+    rechargeName: mockConfig.rechargeName,
   }
 }
 
@@ -94,7 +110,7 @@ export const submitRechargeOrder = async (id: number, data: SubmitRechargeOrderR
 
 export const getRechargeOrders = async (
   page = 1,
-  pageSize = 20,
+  pageSize = 10,
   status?: string,
   startDate?: string,
   endDate?: string,
@@ -137,7 +153,7 @@ export const syncEpayReturn = async (data: EpayReturnReq): Promise<ApiRes<Rechar
   return request.post('/recharge/epay/return', data)
 }
 
-export const getAdminRechargeOrders = async (page = 1, pageSize = 20, status?: string): Promise<ApiRes<PageRes<AdminRechargeOrder>>> => {
+export const getAdminRechargeOrders = async (page = 1, pageSize = 10, status?: string): Promise<ApiRes<PageRes<AdminRechargeOrder>>> => {
   if (useMock) {
     await delay()
     const list: AdminRechargeOrder[] = [{ ...mockOrder(500), id: 1, status: 'submitted', userId: 1001, username: 'user1', nickname: '用户1' }]

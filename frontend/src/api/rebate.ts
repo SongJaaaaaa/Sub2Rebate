@@ -14,7 +14,7 @@ export interface RebateRecordQuery {
 }
 
 export const getRebateRecords = async (query: RebateRecordQuery = {}): Promise<ApiRes<PageRes<RebateRecord>>> => {
-  const { page = 1, pageSize = 20, type, status, startDate, endDate } = query
+  const { page = 1, pageSize = 10, type, status, startDate, endDate } = query
   if (useMock) {
     await delay()
     let list = [...mockRebateRecords]

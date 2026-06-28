@@ -24,7 +24,7 @@ export const getAdminTrends = async (range = '7d'): Promise<ApiRes<{ items: Admi
 
 // ============ 用户管理 ============
 
-export const getAdminUsers = async (page = 1, pageSize = 20, keyword?: string, rebateStatus?: string): Promise<ApiRes<PageRes<AdminUser>>> => {
+export const getAdminUsers = async (page = 1, pageSize = 10, keyword?: string, rebateStatus?: string): Promise<ApiRes<PageRes<AdminUser>>> => {
   if (useMock) {
     await delay()
     let list = [...mockAdminUsers]
@@ -61,7 +61,7 @@ export const setUserRole = async (userId: number, role: string): Promise<ApiRes<
 
 // ============ 提现审核 ============
 
-export const getAdminWithdrawals = async (page = 1, pageSize = 20, status?: string): Promise<ApiRes<PageRes<AdminWithdrawRecord>>> => {
+export const getAdminWithdrawals = async (page = 1, pageSize = 10, status?: string): Promise<ApiRes<PageRes<AdminWithdrawRecord>>> => {
   if (useMock) {
     await delay()
     let list = [...mockAdminWithdrawals]

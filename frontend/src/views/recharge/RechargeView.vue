@@ -7,18 +7,28 @@ import StatusTag from '@/components/common/StatusTag.vue'
 import { createRechargeOrder, getRechargeConfig, getRechargeOrder, getRechargeOrders, submitRechargeOrder, syncEpayReturn } from '@/api/recharge'
 import { money } from '@/utils/money'
 import { getRechargeStatus } from '@/utils/status'
+import { pageSizes } from '@/constants/pagination'
 import type { RechargeConfig, RechargeOrder, EpayReturnReq } from '@/types/recharge'
 
-const packages = [
+const basePackages = [
   { id: 1, amount: 50, bonus: 0, label: '¥50' },
   { id: 2, amount: 100, bonus: 5, label: '¥100', tag: '送¥5' },
   { id: 3, amount: 200, bonus: 15, label: '¥200', tag: '送¥15' },
   { id: 4, amount: 500, bonus: 50, label: '¥500', tag: '送¥50', popular: true },
   { id: 5, amount: 1000, bonus: 120, label: '¥1000', tag: '送¥120' },
 ]
+type RechargePkg = (typeof basePackages)[number]
+
+const calcBonus = (amount: number, cfg: RechargeConfig | null) => {
+  let bonus = 0
+  ;(cfg?.bonusPackages || []).forEach((item) => {
+    if (amount >= Number(item.amount || 0)) bonus = Number(item.bonus || 0)
+  })
+  return bonus
+}
 
 const step = ref<'select' | 'pay' | 'result'>('select')
-const selectedPackage = ref(packages[3])
+const selectedAmount = ref(500)
 const customAmount = ref('')
 const useCustom = ref(false)
 const loading = ref(false)
@@ -38,6 +48,15 @@ const orderTimer = ref<number | null>(null)
 const orderPagination = ref({ page: 1, pageSize: 10, total: 0 })
 const statusFilter = ref('')
 const dateRange = ref<[string, string] | null>(null)
+const packages = computed(() => basePackages.map((item) => {
+  const bonus = calcBonus(item.amount, cfg.value)
+  return {
+    ...item,
+    bonus,
+    tag: bonus > 0 ? `送¥${bonus}` : '',
+  }
+}))
+const selectedPackage = computed(() => packages.value.find((item) => item.amount === selectedAmount.value) || packages.value[0])
 
 const statusOptions = [
   { label: '全部', value: '' },
@@ -54,30 +73,30 @@ const terminalStatuses = ['approved', 'failed', 'rejected', 'expired']
 
 const finalAmount = computed(() => {
   if (useCustom.value) return parseFloat(customAmount.value) || 0
-  return selectedPackage.value.amount
+  return selectedPackage.value?.amount || 0
 })
 
 const finalBonus = computed(() => {
   if (useCustom.value) {
-    const val = parseFloat(customAmount.value) || 0
-    if (val >= 1000) return 120
-    if (val >= 500) return 50
-    if (val >= 200) return 15
-    if (val >= 100) return 5
-    return 0
+    return calcBonus(parseFloat(customAmount.value) || 0, cfg.value)
   }
-  return selectedPackage.value.bonus
+  return selectedPackage.value?.bonus || 0
 })
 
-const selectPackage = (pkg: typeof packages[0]) => {
-  selectedPackage.value = pkg
+const feeRate = computed(() => parseFloat(cfg.value?.feeRate || '0') || 0)
+const feeAmount = computed(() => Math.round(finalAmount.value * feeRate.value) / 100)
+const payableAmount = computed(() => finalAmount.value + feeAmount.value)
+const feeText = computed(() => `${feeRate.value.toFixed(2)}%`)
+
+const selectPackage = (pkg: RechargePkg) => {
+  selectedAmount.value = pkg.amount
   useCustom.value = false
 }
 
 const fetchBase = async () => {
   loading.value = true
   try {
-    const [cfgRes, orderRes] = await Promise.all([getRechargeConfig(), fetchOrders(orderPagination.value.page)])
+    const [cfgRes] = await Promise.all([getRechargeConfig(), fetchOrders(orderPagination.value.page)])
     if (cfgRes.code === 0) cfg.value = cfgRes.data
   } finally {
     loading.value = false
@@ -238,6 +257,11 @@ const stopOrderPolling = () => {
 
 const onFilterChange = () => fetchOrders(1)
 
+const onOrderSizeChange = (size: number) => {
+  orderPagination.value.pageSize = size
+  fetchOrders(1)
+}
+
 const copyOrderNo = async (orderNo: string) => {
   await navigator.clipboard.writeText(orderNo)
   ElMessage.success('订单号已复制')
@@ -259,7 +283,7 @@ onBeforeUnmount(() => stopOrderPolling())
 
 <template>
   <div class="space-y-6" v-loading="loading || syncingReturn">
-    <PageHeader title="额度充值" description="选择充值金额并完成支付，到账后自动增加 API 额度。" />
+    <PageHeader title="额度充值" description="选择充值金额并完成支付，到账后自动增加额度。" />
 
     <div v-if="cfg && !cfg.enabled" class="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
       当前未开启二维码充值，请联系管理员。
@@ -294,9 +318,21 @@ onBeforeUnmount(() => stopOrderPolling())
             <span class="text-[var(--sr-muted)]">充值金额</span>
             <span class="font-bold">¥{{ finalAmount.toFixed(2) }}</span>
           </div>
+          <div class="mt-2 flex items-center justify-between text-sm">
+            <span class="text-[var(--sr-muted)]">收款手续费（{{ feeText }}）</span>
+            <span class="font-bold">¥{{ feeAmount.toFixed(2) }}</span>
+          </div>
+          <div class="mt-2 flex items-center justify-between text-sm">
+            <span class="text-[var(--sr-muted)]">充值金额</span>
+            <span class="font-bold">¥{{ finalAmount.toFixed(2) }}</span>
+          </div>
           <div v-if="finalBonus > 0" class="mt-2 flex items-center justify-between text-sm">
             <span class="text-[var(--sr-muted)]">赠送额度</span>
             <span class="font-bold text-orange-500">+¥{{ finalBonus.toFixed(2) }}</span>
+          </div>
+          <div class="mt-2 flex items-center justify-between border-t border-[var(--sr-border)] pt-2 text-sm">
+            <span class="font-semibold">用户支付</span>
+            <span class="text-lg font-bold text-[var(--sr-secondary)]">¥{{ payableAmount.toFixed(2) }}</span>
           </div>
           <div class="mt-2 flex items-center justify-between border-t border-[var(--sr-border)] pt-2 text-sm">
             <span class="font-semibold">预计到账</span>
@@ -306,7 +342,7 @@ onBeforeUnmount(() => stopOrderPolling())
 
         <div class="mt-6">
           <el-button type="primary" size="large" :disabled="!cfg?.enabled" class="w-full" @click="createOrder">
-            创建充值订单 ¥{{ finalAmount.toFixed(2) }}
+            创建充值订单 ¥{{ payableAmount.toFixed(2) }}
           </el-button>
         </div>
       </AppCard>
@@ -328,10 +364,12 @@ onBeforeUnmount(() => stopOrderPolling())
           <div class="mt-2">如果没有自动跳转，请点击下方按钮前往支付页面。</div>
         </div>
 
-        <div class="mt-4 rounded-lg bg-[var(--sr-surface-low)] p-3 text-left text-sm">
+          <div class="mt-4 rounded-lg bg-[var(--sr-surface-low)] p-3 text-left text-sm">
           <div class="flex justify-between gap-3"><span class="text-[var(--sr-muted)]">订单号</span><span class="font-mono text-xs">{{ curOrder.orderNo }}</span></div>
           <div v-if="curOrder.outTradeNo" class="mt-2 flex justify-between gap-3"><span class="text-[var(--sr-muted)]">支付单号</span><span class="font-mono text-xs">{{ curOrder.outTradeNo }}</span></div>
-          <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">支付金额</span><span class="font-bold text-[var(--sr-secondary)]">¥{{ curOrder.amount }}</span></div>
+          <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">充值金额</span><span class="font-bold">¥{{ curOrder.amount }}</span></div>
+          <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">手续费（{{ (parseFloat(curOrder.feeRate || '0') || 0).toFixed(2) }}%）</span><span class="font-bold">¥{{ curOrder.feeAmount }}</span></div>
+          <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">用户支付</span><span class="font-bold text-[var(--sr-secondary)]">¥{{ curOrder.payableAmount }}</span></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">预计到账</span><span class="font-bold text-green-600">¥{{ curOrder.creditAmount }}</span></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">收款方</span><span>{{ curOrder.displayName || (isEpay ? 'Epay 当面付' : '支付宝收款码') }}</span></div>
           <div class="mt-2 flex justify-between"><span class="text-[var(--sr-muted)]">有效期</span><span>{{ curOrder.expireAt }}</span></div>
@@ -399,10 +437,10 @@ onBeforeUnmount(() => stopOrderPolling())
         <el-table-column prop="channel" label="通道" width="120">
           <template #default="{ row }">{{ row.channel === 'epay' ? 'Epay' : '支付宝' }}</template>
         </el-table-column>
-        <el-table-column label="实付金额/初始额度" min-width="150">
+        <el-table-column label="充值/支付" min-width="150">
           <template #default="{ row }">
-            <div class="font-semibold">{{ money(row.paidAmount || row.amount) }}</div>
-            <div class="mt-1 text-xs text-[var(--sr-muted)]">初始：{{ row.sub2BalanceBefore ? money(row.sub2BalanceBefore) : '-' }}</div>
+            <div class="font-semibold">{{ money(row.amount) }}</div>
+            <div class="mt-1 text-xs text-[var(--sr-muted)]">支付：{{ money(row.payableAmount || row.amount) }}</div>
           </template>
         </el-table-column>
         <el-table-column label="到账额度/充值后额度" min-width="160">
@@ -427,13 +465,15 @@ onBeforeUnmount(() => stopOrderPolling())
         </el-table-column>
       </el-table>
 
-      <div v-if="orderPagination.total > orderPagination.pageSize" class="mt-4 flex justify-end">
+      <div class="mt-4 flex justify-end">
         <el-pagination
           v-model:current-page="orderPagination.page"
-          :page-size="orderPagination.pageSize"
+          v-model:page-size="orderPagination.pageSize"
+          :page-sizes="pageSizes"
           :total="orderPagination.total"
-          layout="prev, pager, next"
+          layout="total, sizes, prev, pager, next, jumper"
           @current-change="fetchOrders"
+          @size-change="onOrderSizeChange"
         />
       </div>
     </AppCard>
@@ -452,6 +492,8 @@ onBeforeUnmount(() => stopOrderPolling())
         <el-descriptions-item label="支付状态">{{ detailOrder.tradeStatus || '-' }}</el-descriptions-item>
         <el-descriptions-item label="入账状态">{{ detailOrder.creditStatus || '-' }}</el-descriptions-item>
         <el-descriptions-item label="充值金额">{{ money(detailOrder.amount) }}</el-descriptions-item>
+        <el-descriptions-item label="手续费">{{ money(detailOrder.feeAmount) }}</el-descriptions-item>
+        <el-descriptions-item label="用户支付">{{ money(detailOrder.payableAmount) }}</el-descriptions-item>
         <el-descriptions-item label="实付金额">{{ detailOrder.paidAmount ? money(detailOrder.paidAmount) : '-' }}</el-descriptions-item>
         <el-descriptions-item label="到账额度">{{ money(detailOrder.creditAmount) }}</el-descriptions-item>
         <el-descriptions-item label="充值前额度">{{ detailOrder.sub2BalanceBefore ? money(detailOrder.sub2BalanceBefore) : '-' }}</el-descriptions-item>

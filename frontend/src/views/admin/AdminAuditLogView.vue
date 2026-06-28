@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { Search, Download } from '@element-plus/icons-vue'
 import AppCard from '@/components/common/AppCard.vue'
 import { getAuditLogs } from '@/api/admin'
+import { pageSizes } from '@/constants/pagination'
 import type { AuditLogItem } from '@/types/admin'
 
 const loading = ref(false)
@@ -34,6 +35,11 @@ const fetchLogs = async (page = 1) => {
 const showDetail = (log: AuditLogItem) => {
   selectedLog.value = log
   detailVisible.value = true
+}
+
+const onSizeChange = (size: number) => {
+  pagination.value.pageSize = size
+  fetchLogs(1)
 }
 
 onMounted(() => fetchLogs())
@@ -104,11 +110,13 @@ onMounted(() => fetchLogs())
           <span>显示 1-{{ logs.length }} 条，共 {{ pagination.total }} 条记录</span>
           <el-pagination
             v-model:current-page="pagination.page"
-            :page-size="pagination.pageSize"
+            v-model:page-size="pagination.pageSize"
+            :page-sizes="pageSizes"
             :total="pagination.total"
-            layout="prev, pager, next"
+            layout="total, sizes, prev, pager, next, jumper"
             small
             @current-change="fetchLogs"
+            @size-change="onSizeChange"
           />
         </div>
       </AppCard>

@@ -6,6 +6,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { getRebateRecords } from '@/api/rebate'
+import { pageSizes } from '@/constants/pagination'
 import { money } from '@/utils/money'
 import { getRebateStatusDisplay, getRebateTypeText } from '@/utils/status'
 import type { RebateRecord, RebateStatus, RebateType } from '@/types/rebate'
@@ -76,6 +77,11 @@ const fetchRecords = async (page = 1) => {
 
 const onFilterChange = () => fetchRecords(1)
 
+const onSizeChange = (size: number) => {
+  pagination.value.pageSize = size
+  fetchRecords(1)
+}
+
 onMounted(() => fetchRecords())
 </script>
 
@@ -136,13 +142,15 @@ onMounted(() => fetchRecords())
 
       <EmptyState v-if="!records.length && !loading" title="暂无返利明细" description="产生返利后会显示在这里" />
 
-      <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex justify-end">
+      <div class="mt-4 flex justify-end">
         <el-pagination
           v-model:current-page="pagination.page"
-          :page-size="pagination.pageSize"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="pageSizes"
           :total="pagination.total"
-          layout="prev, pager, next"
+          layout="total, sizes, prev, pager, next, jumper"
           @current-change="fetchRecords"
+          @size-change="onSizeChange"
         />
       </div>
     </AppCard>

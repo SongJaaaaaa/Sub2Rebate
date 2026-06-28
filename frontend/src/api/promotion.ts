@@ -28,7 +28,7 @@ export const getInviteTree = async (maxDepth = 3): Promise<ApiRes<{ root: Invite
   return request.get('/invite/tree', { params: { maxDepth } })
 }
 
-export const getInviteRecords = async (page = 1, pageSize = 20): Promise<ApiRes<PageRes<InviteRecord>>> => {
+export const getInviteRecords = async (page = 1, pageSize = 10): Promise<ApiRes<PageRes<InviteRecord>>> => {
   if (useMock) {
     await delay()
     return { code: 0, message: 'ok', data: { list: mockInviteRecords, page, pageSize, total: mockInviteRecords.length } }
@@ -44,7 +44,7 @@ export const getPromotionSummary = async (): Promise<ApiRes<PromotionSummary>> =
   return request.get('/promotion/summary')
 }
 
-export const getConversions = async (page = 1, pageSize = 20): Promise<ApiRes<PageRes<ConversionRecord>>> => {
+export const getConversions = async (page = 1, pageSize = 10): Promise<ApiRes<PageRes<ConversionRecord>>> => {
   if (useMock) {
     await delay()
     return { code: 0, message: 'ok', data: { list: mockConversions, page, pageSize, total: mockConversions.length } }
@@ -52,7 +52,7 @@ export const getConversions = async (page = 1, pageSize = 20): Promise<ApiRes<Pa
   return request.get('/promotion/conversions', { params: { page, pageSize } })
 }
 
-export const getRebateRecords = async (page = 1, pageSize = 20): Promise<ApiRes<PageRes<RebateRecord>>> => {
+export const getRebateRecords = async (page = 1, pageSize = 10): Promise<ApiRes<PageRes<RebateRecord>>> => {
   if (useMock) {
     await delay()
     return { code: 0, message: 'ok', data: { list: mockRebateRecords, page, pageSize, total: mockRebateRecords.length } }

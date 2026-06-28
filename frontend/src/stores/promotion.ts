@@ -21,7 +21,7 @@ export const usePromotionStore = defineStore('promotion', () => {
     }
   }
 
-  const fetchConversions = async (page = 1, pageSize = 20) => {
+  const fetchConversions = async (page = 1, pageSize = 10) => {
     const res = await getConversions(page, pageSize)
     if (res.code === 0) {
       conversions.value = res.data.list
@@ -29,7 +29,7 @@ export const usePromotionStore = defineStore('promotion', () => {
     }
   }
 
-  const fetchInviteRecords = async (page = 1, pageSize = 20) => {
+  const fetchInviteRecords = async (page = 1, pageSize = 10) => {
     const res = await getInviteRecords(page, pageSize)
     if (res.code === 0) {
       inviteRecords.value = res.data.list

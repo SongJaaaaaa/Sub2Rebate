@@ -5,6 +5,7 @@ import AppCard from '@/components/common/AppCard.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import { getAdminWithdrawals, approveWithdraw, markPaid, rejectWithdraw } from '@/api/admin'
+import { pageSizes } from '@/constants/pagination'
 import { money } from '@/utils/money'
 import { getWithdrawStatus } from '@/utils/status'
 import type { AdminWithdrawRecord } from '@/types/admin'
@@ -12,7 +13,7 @@ import type { AdminWithdrawRecord } from '@/types/admin'
 const records = ref<AdminWithdrawRecord[]>([])
 const loading = ref(false)
 const statusFilter = ref('')
-const pagination = ref({ page: 1, pageSize: 20, total: 0 })
+const pagination = ref({ page: 1, pageSize: 10, total: 0 })
 
 const statusOptions = [
   { label: '全部', value: '' },
@@ -34,6 +35,11 @@ const fetchList = async (page = 1) => {
   } finally {
     loading.value = false
   }
+}
+
+const onSizeChange = (size: number) => {
+  pagination.value.pageSize = size
+  fetchList(1)
 }
 
 const patchRow = (row: AdminWithdrawRecord, data: AdminWithdrawRecord) => {
@@ -161,14 +167,15 @@ onMounted(() => fetchList())
         </el-table-column>
       </el-table>
 
-      <div v-if="pagination.total > pagination.pageSize" class="mt-4 flex items-center justify-between">
-        <span class="text-xs text-[var(--sr-muted)]">共 {{ pagination.total }} 条记录</span>
+      <div class="mt-4 flex items-center justify-end">
         <el-pagination
           v-model:current-page="pagination.page"
-          :page-size="pagination.pageSize"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="pageSizes"
           :total="pagination.total"
-          layout="prev, pager, next"
+          layout="total, sizes, prev, pager, next, jumper"
           @current-change="fetchList"
+          @size-change="onSizeChange"
         />
       </div>
     </AppCard>

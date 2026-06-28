@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth'
 import { money } from '@/utils/money'
 import { getRebateTypeText, getRebateStatusDisplay } from '@/utils/status'
 import { getRebateRecords } from '@/api/promotion'
+import { pageSizes } from '@/constants/pagination'
 import type { RebateRecord } from '@/types/rebate'
 
 const promotion = usePromotionStore()
@@ -70,6 +71,21 @@ const handleConversionPageChange = async (page: number) => {
 
 const handleRebatePageChange = (page: number) => {
   fetchRebateRecords(page)
+}
+
+const handleInviteSizeChange = async (size: number) => {
+  invitePagination.value.pageSize = size
+  await handleInvitePageChange(1)
+}
+
+const handleConversionSizeChange = async (size: number) => {
+  conversionPagination.value.pageSize = size
+  await handleConversionPageChange(1)
+}
+
+const handleRebateSizeChange = (size: number) => {
+  rebatePagination.value.pageSize = size
+  fetchRebateRecords(1)
 }
 
 const refreshPage = async () => {
@@ -142,13 +158,15 @@ onMounted(() => refreshPage())
             </el-table-column>
             <el-table-column prop="boundAt" label="加入时间" width="160" />
           </el-table>
-          <div v-if="invitePagination.total > invitePagination.pageSize" class="mt-4 flex justify-end">
+          <div class="mt-4 flex justify-end">
             <el-pagination
               v-model:current-page="invitePagination.page"
-              :page-size="invitePagination.pageSize"
+              v-model:page-size="invitePagination.pageSize"
+              :page-sizes="pageSizes"
               :total="invitePagination.total"
-              layout="prev, pager, next"
+              layout="total, sizes, prev, pager, next, jumper"
               @current-change="handleInvitePageChange"
+              @size-change="handleInviteSizeChange"
             />
           </div>
           <EmptyState v-if="!promotion.inviteRecords.length && !promotion.loading" title="暂无邀请记录" description="分享推广链接开始邀请吧" />
@@ -172,13 +190,15 @@ onMounted(() => refreshPage())
             </el-table-column>
             <el-table-column prop="createdAt" label="时间" width="160" />
           </el-table>
-          <div v-if="conversionPagination.total > conversionPagination.pageSize" class="mt-4 flex justify-end">
+          <div class="mt-4 flex justify-end">
             <el-pagination
               v-model:current-page="conversionPagination.page"
-              :page-size="conversionPagination.pageSize"
+              v-model:page-size="conversionPagination.pageSize"
+              :page-sizes="pageSizes"
               :total="conversionPagination.total"
-              layout="prev, pager, next"
+              layout="total, sizes, prev, pager, next, jumper"
               @current-change="handleConversionPageChange"
+              @size-change="handleConversionSizeChange"
             />
           </div>
           <EmptyState v-if="!promotion.conversions.length" title="暂无转化记录" description="下级用户付费后，转化记录会显示在这里" />
@@ -207,13 +227,15 @@ onMounted(() => refreshPage())
             </el-table-column>
             <el-table-column prop="createdAt" label="时间" width="160" />
           </el-table>
-          <div v-if="rebatePagination.total > rebatePagination.pageSize" class="mt-4 flex justify-end">
+          <div class="mt-4 flex justify-end">
             <el-pagination
               v-model:current-page="rebatePagination.page"
-              :page-size="rebatePagination.pageSize"
+              v-model:page-size="rebatePagination.pageSize"
+              :page-sizes="pageSizes"
               :total="rebatePagination.total"
-              layout="prev, pager, next"
+              layout="total, sizes, prev, pager, next, jumper"
               @current-change="handleRebatePageChange"
+              @size-change="handleRebateSizeChange"
             />
           </div>
           <EmptyState v-if="!rebateRecords.length && !rebateLoading" title="暂无返利记录" description="产生返利后会显示在这里" />

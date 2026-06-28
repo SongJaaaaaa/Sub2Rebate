@@ -81,7 +81,7 @@ export const transferToApiQuota = async (data: WithdrawApplyReq): Promise<ApiRes
   return request.post('/withdraw/to-api-quota', data)
 }
 
-export const getWithdrawRecords = async (page = 1, pageSize = 20, status?: string): Promise<ApiRes<PageRes<WithdrawRecord>>> => {
+export const getWithdrawRecords = async (page = 1, pageSize = 10, status?: string): Promise<ApiRes<PageRes<WithdrawRecord>>> => {
   if (useMock) {
     await delay()
     let list = [...mockWithdrawRecords]

@@ -22,7 +22,7 @@ export const useWithdrawStore = defineStore('withdraw', () => {
     if (res.code === 0) account.value = res.data.account
   }
 
-  const fetchRecords = async (page = 1, pageSize = 20, status?: string) => {
+  const fetchRecords = async (page = 1, pageSize = 10, status?: string) => {
     loading.value = true
     try {
       const res = await getWithdrawRecords(page, pageSize, status)

@@ -9,15 +9,19 @@ import TrendChart from '@/components/common/TrendChart.vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useAuthStore } from '@/stores/auth'
 import { money } from '@/utils/money'
+import { pageSizes } from '@/constants/pagination'
 
 const dashboard = useDashboardStore()
 const auth = useAuthStore()
 const refreshing = ref(false)
+const activityPage = ref(1)
+const activityPageSize = ref(10)
 
 const stats = computed(() => {
   if (!dashboard.summary) return []
   return [
     { label: '可提现余额', value: money(dashboard.summary.availableAmount), hint: '可发起提现' },
+    { label: '累计入账', value: money(dashboard.summary.totalRechargeCreditAmount), hint: '已入账充值', hintType: 'muted' as const },
     { label: '今日返利', value: money(dashboard.summary.todayRebateAmount), hint: '+今日' },
     { label: '累计返利', value: money(dashboard.summary.totalRebateAmount), hint: '历史累计', hintType: 'muted' as const },
     { label: '团队人数', value: `${dashboard.summary.teamInviteCount}`, hint: `直邀 ${dashboard.summary.directInviteCount}` },
@@ -27,6 +31,16 @@ const stats = computed(() => {
 const trendChartData = computed(() =>
   dashboard.trends.map((t) => ({ date: t.date, value: parseFloat(t.rebateAmount) }))
 )
+
+const pagedActivities = computed(() => {
+  const start = (activityPage.value - 1) * activityPageSize.value
+  return dashboard.activities.slice(start, start + activityPageSize.value)
+})
+
+const onActivitySizeChange = (size: number) => {
+  activityPageSize.value = size
+  activityPage.value = 1
+}
 
 const onRefresh = async () => {
   refreshing.value = true
@@ -53,7 +67,7 @@ onMounted(() => onRefresh())
       </template>
     </PageHeader>
 
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       <MetricCard v-for="item in stats" :key="item.label" v-bind="item" />
     </div>
 
@@ -75,7 +89,7 @@ onMounted(() => onRefresh())
 
       <EmptyState v-if="!dashboard.activities.length && !dashboard.loading" title="暂无动态" description="开始推广后，返利记录将显示在这里。" />
 
-      <el-table v-else :data="dashboard.activities" style="width: 100%" v-loading="dashboard.loading">
+      <el-table v-else :data="pagedActivities" style="width: 100%" v-loading="dashboard.loading">
         <el-table-column prop="title" label="事件" min-width="120" />
         <el-table-column prop="content" label="详情" min-width="160" show-overflow-tooltip />
         <el-table-column prop="amount" label="金额" width="100">
@@ -87,6 +101,17 @@ onMounted(() => onRefresh())
         </el-table-column>
         <el-table-column prop="createdAt" label="时间" width="160" />
       </el-table>
+
+      <div class="mt-4 flex justify-end">
+        <el-pagination
+          v-model:current-page="activityPage"
+          v-model:page-size="activityPageSize"
+          :page-sizes="pageSizes"
+          :total="dashboard.activities.length"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="onActivitySizeChange"
+        />
+      </div>
     </AppCard>
   </div>
 </template>
