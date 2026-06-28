@@ -32,6 +32,8 @@ export interface AdminPaymentConfig {
   note: string
   expireMinutes: number
   creditRate: string
+  rechargeName: string
+  feeRate: string
   withdrawDailyLimit: number
   epay: EpayConfig
   alipayTransfer: AlipayTransferConfig
@@ -64,7 +66,8 @@ export interface MilestoneConfig {
 
 export interface MultiLevelConfig {
   enabled: boolean
-  totalPoolRate: string
+  stageAmount: string
+  rewardAmount: string
   decayCoefficient: string
   maxDepth: number
   inactiveNodeMode: 'platform' | 'exclude_recalculate'
@@ -84,9 +87,15 @@ export interface RiskControlConfig {
   lieFlatRestoreMinRecharge: string
 }
 
+export interface RechargeBonusRule {
+  amount: string
+  bonus: string
+}
+
 export interface FullRebateConfig {
   milestone: MilestoneConfig
   multiLevel: MultiLevelConfig
+  rechargeBonus: RechargeBonusRule[]
   withdrawLimit: WithdrawLimitConfig
   riskControl: RiskControlConfig
   lastModifiedBy: string

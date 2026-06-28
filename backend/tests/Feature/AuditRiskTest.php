@@ -66,7 +66,7 @@ class AuditRiskTest extends TestCase
         $payer = $this->user(1002, 'payer');
         $this->bind($parent, $payer);
 
-        $event = $this->event($payer, 'audit-rebate-250', '250');
+        $event = $this->event($payer, 'audit-rebate-300', '300');
         app(MilestoneService::class)->process($event);
         app(DecayRebateService::class)->process($event->refresh());
 
@@ -80,7 +80,7 @@ class AuditRiskTest extends TestCase
             'target_user_id' => $parent->id,
             'module' => 'rebate',
             'action' => 'rebate.decay_granted',
-            'remark' => '多级衰减返利发放',
+            'remark' => '多级返利分配发放',
         ]);
     }
 

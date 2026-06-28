@@ -44,11 +44,18 @@ export const mockFullRebateConfig: FullRebateConfig = {
   },
   multiLevel: {
     enabled: true,
-    totalPoolRate: '15',
+    stageAmount: '100',
+    rewardAmount: '15',
     decayCoefficient: '0.5',
     maxDepth: 5,
     inactiveNodeMode: 'platform',
   },
+  rechargeBonus: [
+    { amount: '100', bonus: '5' },
+    { amount: '200', bonus: '15' },
+    { amount: '500', bonus: '50' },
+    { amount: '1000', bonus: '120' },
+  ],
   withdrawLimit: {
     minAmount: '100.00',
     cooldownHours: 24,

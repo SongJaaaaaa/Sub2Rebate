@@ -15,6 +15,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class RebateInactiveNodeTest extends TestCase
@@ -227,6 +228,7 @@ class RebateInactiveNodeTest extends TestCase
 
     private function event(User $user, string $sourceId, string $amount): RebateEvent
     {
+        Queue::fake();
         $admin = $this->user(8000 + DB::table('users')->count(), 'admin'.DB::table('users')->count(), 'admin');
         $result = app(RechargeEventService::class)->createManual($admin, $user, [
             'source_type' => 'manual_admin',

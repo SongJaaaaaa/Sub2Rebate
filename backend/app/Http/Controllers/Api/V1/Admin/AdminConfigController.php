@@ -64,6 +64,8 @@ class AdminConfigController extends Controller
         $note = trim((string) $request->input('note', '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。'));
         $expireMinutes = (int) $request->input('expireMinutes', 15);
         $creditRate = trim((string) $request->input('creditRate', '1'));
+        $rechargeName = trim((string) $request->input('rechargeName', '额度充值')) ?: '额度充值';
+        $feeRate = trim((string) $request->input('feeRate', '0.6'));
         $epay = is_array($request->input('epay')) ? $request->input('epay') : [];
         $epayEnabled = (bool) ($epay['enabled'] ?? false);
         $epayPid = trim((string) ($epay['pid'] ?? ''));
@@ -103,6 +105,10 @@ class AdminConfigController extends Controller
 
         if (! is_numeric($creditRate) || (float) $creditRate <= 0) {
             return ApiResponse::fail(ApiError::VALIDATION_FAILED, '人民币额度换算比例必须大于 0', null, 422);
+        }
+
+        if (! is_numeric($feeRate) || (float) $feeRate < 0 || (float) $feeRate > 100) {
+            return ApiResponse::fail(ApiError::VALIDATION_FAILED, '收款手续费比例必须在 0 到 100 之间', null, 422);
         }
 
         if ($enabled && $mode === 'epay') {
@@ -163,6 +169,8 @@ class AdminConfigController extends Controller
             'payment.qr_note' => $note,
             'payment.order_expire_minutes' => $expireMinutes,
             'payment.cny_to_credit_rate' => $creditRate,
+            'payment.recharge_name' => $rechargeName,
+            'payment.recharge_fee_rate' => $feeRate,
             'payment.epay.enabled' => $epayEnabled,
             'payment.epay.pid' => $epayPid,
             'payment.epay.key' => $epayKey !== '' ? $epayKey : $oldEpayKey,
@@ -230,10 +238,17 @@ class AdminConfigController extends Controller
             'milestone.amount' => ['name' => '里程碑金额', 'type' => 'number', 'min' => 0.01],
             'milestone.reward_amount' => ['name' => '里程碑奖励金额', 'type' => 'number', 'min' => 0],
             'milestone.max_times' => ['name' => '里程碑次数上限', 'type' => 'number', 'min' => 0, 'max' => 100],
-            'rebate.pool_ratio' => ['name' => '返利池比例', 'type' => 'number', 'min' => 0, 'max' => 1],
+            'rebate.stage_amount' => ['name' => '多级返利门槛', 'type' => 'number', 'min' => 0.01],
+            'rebate.stage_reward_amount' => ['name' => '每次分配奖励池', 'type' => 'number', 'min' => 0],
             'rebate.decay_factor' => ['name' => '衰减系数', 'type' => 'number', 'min' => 0.000001, 'max' => 1],
+            'rebate.max_depth' => ['name' => '最大返利深度', 'type' => 'number', 'min' => 1, 'max' => 20],
             'rebate.inactive_node_mode' => ['name' => '失效节点返利处理方式', 'type' => 'string', 'in' => ['platform', 'exclude_recalculate']],
+            'rebate.recharge_bonus_100' => ['name' => '充值 100 赠送金额', 'type' => 'number', 'min' => 0],
+            'rebate.recharge_bonus_200' => ['name' => '充值 200 赠送金额', 'type' => 'number', 'min' => 0],
+            'rebate.recharge_bonus_500' => ['name' => '充值 500 赠送金额', 'type' => 'number', 'min' => 0],
+            'rebate.recharge_bonus_1000' => ['name' => '充值 1000 赠送金额', 'type' => 'number', 'min' => 0],
             'payment.cny_to_credit_rate' => ['name' => '人民币额度换算比例', 'type' => 'number', 'min' => 0.000001],
+            'payment.recharge_fee_rate' => ['name' => '收款手续费比例', 'type' => 'number', 'min' => 0, 'max' => 100],
             'payment.mode' => ['name' => '支付通道模式', 'type' => 'string', 'in' => ['manual_qr', 'epay']],
             'payment.order_expire_minutes' => ['name' => '充值订单有效期', 'type' => 'number', 'min' => 1, 'max' => 1440],
             'payment.alipay_transfer.single_max_amount' => ['name' => '支付宝单笔打款限额', 'type' => 'number', 'min' => 0],
@@ -265,6 +280,8 @@ class AdminConfigController extends Controller
             'note' => trim((string) $this->configs->get('payment.qr_note', '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。')),
             'expireMinutes' => max(1, (int) $this->configs->get('payment.order_expire_minutes', 15)),
             'creditRate' => (string) $this->configs->get('payment.cny_to_credit_rate', '1'),
+            'rechargeName' => trim((string) $this->configs->get('payment.recharge_name', '额度充值')) ?: '额度充值',
+            'feeRate' => (string) $this->configs->get('payment.recharge_fee_rate', '0.6'),
             'withdrawDailyLimit' => max(1, min((int) $this->configs->get('withdraw.daily_limit', 1), 100)),
             'epay' => [
                 'enabled' => $epay['enabled'],

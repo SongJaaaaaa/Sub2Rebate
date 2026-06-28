@@ -8,6 +8,7 @@ use App\Modules\Payment\Models\RebateEvent;
 use App\Modules\Payment\Services\RechargeEventService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class RechargeEventTest extends TestCase
@@ -32,6 +33,7 @@ class RechargeEventTest extends TestCase
             'updated_at' => now(),
         ]);
         app(ConfigService::class)->forget();
+        Queue::fake();
 
         $result = app(RechargeEventService::class)->createManual($admin, $target, [
             'source_type' => 'manual_admin',

@@ -382,15 +382,23 @@ class DeepApiEndpointTest extends TestCase
         $this->withToken($token)
             ->putJson('/api/v1/admin/rebate-config', [
                 'values' => [
-                    'rebate' => ['pool_ratio' => '0.2'],
+                    'rebate' => [
+                        'stage_reward_amount' => '20',
+                        'recharge_bonus_500' => '66',
+                    ],
                 ],
             ])
             ->assertOk()
-            ->assertJsonPath('data.values.rebate.pool_ratio', '0.2');
+            ->assertJsonPath('data.values.rebate.stage_reward_amount', '20')
+            ->assertJsonPath('data.values.rebate.recharge_bonus_500', '66');
 
         $this->assertDatabaseHas('config_items', [
-            'key' => 'rebate.pool_ratio',
-            'value' => json_encode('0.2'),
+            'key' => 'rebate.stage_reward_amount',
+            'value' => json_encode('20'),
+        ]);
+        $this->assertDatabaseHas('config_items', [
+            'key' => 'rebate.recharge_bonus_500',
+            'value' => json_encode('66'),
         ]);
     }
 

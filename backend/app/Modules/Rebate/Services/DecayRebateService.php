@@ -42,7 +42,7 @@ class DecayRebateService
                 'ok' => true,
                 'processed' => false,
                 'records' => [],
-                'message' => '衰减返利已处理',
+                'message' => '多级返利已处理',
             ];
         }
 
@@ -56,30 +56,41 @@ class DecayRebateService
             ];
         }
 
-        $normalAmount = $this->normalAmount($event);
-        if ($normalAmount <= 0) {
+        $stage = $this->stageResult($event);
+        $triggerCount = (int) $stage['count'];
+        $stageAmount = (float) $stage['stageAmount'];
+        $poolAmount = (float) $stage['pool'];
+
+        if ($triggerCount <= 0 || $poolAmount <= 0) {
             return [
                 'ok' => true,
                 'processed' => false,
                 'records' => [],
-                'normalAmount' => $this->money(0),
-                'message' => '里程碑阶段未结束',
+                'triggerCount' => 0,
+                'stageAmount' => $this->money($stageAmount),
+                'poolAmount' => $this->money(0),
+                'message' => '未达到多级返利台阶',
             ];
         }
 
         $ancestors = $this->invites->rebateAncestors($payer);
         if ($ancestors === []) {
-            $event->error_message = '没有上级，未发放衰减返利';
+            $event->error_message = '没有上级，未发放多级返利';
             $event->save();
 
             return [
                 'ok' => true,
                 'processed' => true,
                 'records' => [],
-                'normalAmount' => $this->money($normalAmount),
+                'triggerCount' => $triggerCount,
+                'stageAmount' => $this->money($stageAmount),
+                'poolAmount' => $this->money($poolAmount),
                 'message' => '没有上级',
             ];
         }
+
+        $maxDepth = max(1, (int) $this->configs->get('rebate.max_depth', 5));
+        $ancestors = array_slice($ancestors, 0, $maxDepth);
 
         $mode = $this->inactiveNodeMode();
         $calcAncestors = $mode === 'exclude_recalculate'
@@ -87,19 +98,21 @@ class DecayRebateService
             : $ancestors;
         $receiverIds = array_map(fn (array $row): int => (int) $row['user_id'], $calcAncestors);
 
-        $custom = $this->customItems($payer, $receiverIds, $normalAmount);
+        $custom = $this->customItems($payer, $receiverIds, $poolAmount);
         if ($custom !== null) {
             $pool = $custom['pool'];
             $items = $custom['items'];
             $snapshot = $custom['snapshot'];
         } else {
-            $poolRatio = $this->configFloat('rebate.pool_ratio', 0.15);
             $decay = $this->configFloat('rebate.decay_factor', 0.4);
-            $pool = $normalAmount * $poolRatio;
+            $pool = $poolAmount;
             $items = $this->calculator->calculate($pool, $receiverIds, $decay);
             $snapshot = [
-                'rebate.pool_ratio' => $this->money($poolRatio),
+                'rebate.stage_amount' => $this->money($stageAmount),
+                'rebate.stage_reward_amount' => $this->money($triggerCount > 0 ? $poolAmount / $triggerCount : $poolAmount),
+                'rebate.trigger_count' => $triggerCount,
                 'rebate.decay_factor' => $this->money($decay),
+                'rebate.max_depth' => $maxDepth,
                 'rebate.pool_amount' => $this->money($pool),
             ];
         }
@@ -120,7 +133,7 @@ class DecayRebateService
             )),
         ];
 
-        return DB::transaction(function () use ($event, $payer, $items, $pool, $snapshot, $normalAmount): array {
+        return DB::transaction(function () use ($event, $payer, $items, $pool, $snapshot, $triggerCount, $stageAmount, $poolAmount): array {
             $records = [];
 
             foreach ($items as $item) {
@@ -133,13 +146,13 @@ class DecayRebateService
                     ],
                     [
                         'payer_user_id' => $payer->id,
-                        'source_amount' => $this->money($normalAmount),
+                        'source_amount' => $this->money($poolAmount),
                         'rebate_amount' => $this->money($item['amount']),
                         'status' => 'confirmed',
                         'config_snapshot' => $snapshot + [
                             'rebate.weight' => $this->money($item['weight']),
                         ],
-                        'remark' => '多级衰减返利',
+                        'remark' => '多级返利分配',
                     ]
                 );
 
@@ -157,7 +170,7 @@ class DecayRebateService
                             'level' => (int) $item['level'],
                             'amount' => $this->money($item['amount']),
                         ],
-                        'remark' => '多级衰减返利发放',
+                        'remark' => '多级返利分配发放',
                     ]);
                 }
 
@@ -168,32 +181,48 @@ class DecayRebateService
                 'ok' => true,
                 'processed' => true,
                 'records' => $records,
-                'normalAmount' => $this->money($normalAmount),
+                'triggerCount' => $triggerCount,
+                'stageAmount' => $this->money($stageAmount),
                 'poolAmount' => $this->money($pool),
             ];
         });
     }
 
-    private function normalAmount(RebateEvent $event): float
+    private function stageResult(RebateEvent $event): array
     {
         $progress = UserRebateProgress::query()
             ->where('user_id', $event->user_id)
             ->first();
 
         if ($progress === null) {
-            return 0.0;
+            return [
+                'count' => 0,
+                'stageAmount' => $this->configFloat('rebate.stage_amount', 100),
+                'pool' => 0.0,
+            ];
         }
 
         $milestoneAmount = $this->configFloat('milestone.amount', 100);
         $maxTimes = max(0, (int) $this->configs->get('milestone.max_times', 2));
-        $threshold = $milestoneAmount * $maxTimes;
+        $milestoneEndAmount = $milestoneAmount * $maxTimes;
+        $stageAmount = $this->configFloat('rebate.stage_amount', 100);
+        $stageReward = $this->configFloat('rebate.stage_reward_amount', 15);
         $after = (float) $progress->total_recharge_amount;
         $before = max(0.0, $after - (float) $event->standard_amount);
+        $afterNormal = max(0.0, $after - $milestoneEndAmount);
+        $beforeNormal = max(0.0, $before - $milestoneEndAmount);
+        $afterCount = $stageAmount > 0 ? (int) floor($afterNormal / $stageAmount) : 0;
+        $beforeCount = $stageAmount > 0 ? (int) floor($beforeNormal / $stageAmount) : 0;
+        $count = max(0, $afterCount - $beforeCount);
 
-        return max(0.0, $after - $threshold) - max(0.0, $before - $threshold);
+        return [
+            'count' => $count,
+            'stageAmount' => $stageAmount,
+            'pool' => $this->amount($count * $stageReward),
+        ];
     }
 
-    private function customItems(User $payer, array $receiverIds, float $normalAmount): ?array
+    private function customItems(User $payer, array $receiverIds, float $poolAmount): ?array
     {
         $item = ConfigItem::query()->where('key', 'rebate.user_override.'.$payer->id)->first();
         if (! $item instanceof ConfigItem || ! is_array($item->value)) {
@@ -232,8 +261,8 @@ class DecayRebateService
                 continue;
             }
 
-            $expected += $normalAmount * $rate;
-            $amount = $this->amount($normalAmount * $rate);
+            $expected += $poolAmount * $rate;
+            $amount = $this->amount($poolAmount * $rate);
             if ($amount <= 0) {
                 continue;
             }

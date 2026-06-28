@@ -9,6 +9,7 @@ use App\Modules\Sub2Api\Repositories\Sub2ApiUserRepository;
 use App\Modules\Invite\Services\InviteService;
 use App\Modules\Payment\Models\PaymentRecord;
 use App\Modules\Rebate\Models\RebateBalance;
+use App\Modules\Rebate\Models\UserRebateProgress;
 use App\Modules\Withdraw\Models\WithdrawAccount;
 use App\Modules\Withdraw\Models\WithdrawRecord;
 use Carbon\CarbonImmutable;
@@ -42,17 +43,29 @@ class AdminApiTest extends TestCase
             ->putJson('/api/v1/admin/rebate-config', [
                 'values' => [
                     'rebate' => [
-                        'pool_ratio' => '0.2',
+                        'stage_amount' => '100',
+                        'stage_reward_amount' => '20',
+                        'max_depth' => '6',
+                        'recharge_bonus_100' => '8',
+                        'recharge_bonus_200' => '18',
                     ],
                 ],
             ])
             ->assertOk()
             ->assertJsonPath('code', 0)
-            ->assertJsonPath('data.values.rebate.pool_ratio', '0.2');
+            ->assertJsonPath('data.values.rebate.stage_amount', '100')
+            ->assertJsonPath('data.values.rebate.stage_reward_amount', '20')
+            ->assertJsonPath('data.values.rebate.max_depth', '6')
+            ->assertJsonPath('data.values.rebate.recharge_bonus_100', '8')
+            ->assertJsonPath('data.values.rebate.recharge_bonus_200', '18');
 
         $this->assertDatabaseHas('config_items', [
-            'key' => 'rebate.pool_ratio',
-            'value' => json_encode('0.2'),
+            'key' => 'rebate.stage_reward_amount',
+            'value' => json_encode('20'),
+        ]);
+        $this->assertDatabaseHas('config_items', [
+            'key' => 'rebate.recharge_bonus_100',
+            'value' => json_encode('8'),
         ]);
         $this->assertDatabaseHas('audit_logs', [
             'actor_user_id' => $admin->id,
@@ -69,12 +82,12 @@ class AdminApiTest extends TestCase
             ->putJson('/api/v1/admin/rebate-config', [
                 'values' => [
                     'rebate' => [
-                        'pool_ratio' => '10',
+                        'max_depth' => '99',
                     ],
                 ],
             ])
             ->assertUnprocessable()
-            ->assertJsonPath('message', '返利池比例不能大于 1');
+            ->assertJsonPath('message', '最大返利深度不能大于 20');
     }
 
     public function test_admin_can_adjust_user_balance(): void
@@ -185,6 +198,94 @@ class AdminApiTest extends TestCase
         ]);
     }
 
+    public function test_admin_api_quota_recharge_syncs_lagged_milestone_progress(): void
+    {
+        config([
+            'sub2rebate.sub2api_base_url' => 'https://sub2api.test',
+            'sub2rebate.sub2api_admin_api_key' => 'secret-key',
+        ]);
+        Http::fake([
+            'https://sub2api.test/api/v1/admin/users/1002/balance' => Http::response([
+                'code' => 0,
+                'data' => [
+                    'id' => 1002,
+                    'balance' => 300,
+                    'total_recharged' => 300,
+                ],
+            ]),
+        ]);
+
+        $admin = $this->user(9001, 'admin', 'admin');
+        $parent = $this->user(1001, 'parent');
+        $child = $this->user(1002, 'child');
+        $invites = app(InviteService::class);
+        $invites->ensurePath($parent);
+        $code = (string) DB::table('referral_paths')->where('user_id', $parent->id)->value('invite_code');
+        $invites->bind($child, $code);
+        $this->fakeSub2Users([
+            $this->sub2User($admin, 'admin-pass'),
+            $this->sub2User($parent, 'parent-pass'),
+            new Sub2ApiUserData(
+                id: (int) $child->id,
+                email: (string) $child->email,
+                username: (string) $child->username,
+                passwordHash: Hash::make('child-pass'),
+                role: 'user',
+                status: 'active',
+                balance: '299',
+                totalRecharged: '299',
+                affCode: 'AFF'.$child->id,
+                inviterId: (int) $parent->id,
+                createdAt: CarbonImmutable::parse('2026-06-13 12:00:00', 'Asia/Shanghai'),
+                updatedAt: CarbonImmutable::parse('2026-06-13 12:00:00', 'Asia/Shanghai'),
+            ),
+        ]);
+
+        PaymentRecord::query()->create([
+            'user_id' => $child->id,
+            'source_type' => 'seed',
+            'source_id' => 'seed-child-299',
+            'status' => 'paid',
+            'source_amount' => '299',
+            'standard_amount' => '299',
+            'credit_amount' => '299',
+            'config_snapshot' => [],
+        ]);
+        UserRebateProgress::query()->create([
+            'user_id' => $child->id,
+            'total_recharge_amount' => '0',
+            'milestone_times' => 0,
+            'last_event_id' => null,
+        ]);
+
+        $this->withToken($admin->createToken('test')->plainTextToken)
+            ->postJson('/api/v1/admin/users/'.$child->id.'/api-quota', [
+                'amount' => '1',
+                'type' => 'add',
+                'reason' => '充值',
+                'remark' => '余额充值',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.amount', '1.00');
+
+        $this->assertDatabaseHas('user_rebate_progress', [
+            'user_id' => $child->id,
+            'total_recharge_amount' => '300',
+            'milestone_times' => 2,
+        ]);
+        $this->assertDatabaseHas('rebate_records', [
+            'payer_user_id' => $child->id,
+            'receiver_user_id' => $parent->id,
+            'type' => 'decay',
+            'rebate_amount' => '15',
+        ]);
+        $this->assertDatabaseMissing('rebate_records', [
+            'payer_user_id' => $child->id,
+            'receiver_user_id' => $parent->id,
+            'type' => 'milestone',
+        ]);
+    }
+
     public function test_admin_can_view_sub2api_quota_snapshot(): void
     {
         $admin = $this->user(9001, 'admin', 'admin');
@@ -215,6 +316,50 @@ class AdminApiTest extends TestCase
             ->assertJsonPath('data.totalUsed', '71.50')
             ->assertJsonPath('data.totalCharged', '200.00')
             ->assertJsonPath('data.sub2ApiAffCode', 'AFF1001');
+    }
+
+    public function test_admin_quota_snapshot_prefers_local_paid_total_when_sub2api_total_is_zero(): void
+    {
+        $admin = $this->user(9001, 'admin', 'admin');
+        $user = $this->user(1001, 'user');
+        PaymentRecord::query()->create([
+            'user_id' => $user->id,
+            'source_type' => 'sub2rebate.admin_api_quota',
+            'source_id' => 'quota-total-1001',
+            'status' => 'paid',
+            'source_amount' => '25',
+            'source_currency' => 'CNY',
+            'standard_amount' => '25',
+            'standard_currency' => 'CNY',
+            'credit_amount' => '25',
+            'config_snapshot' => [],
+            'remark' => 'API 额度充值',
+            'paid_at' => now(),
+        ]);
+        $this->fakeSub2Users([
+            $this->sub2User($admin, 'admin-pass'),
+            new Sub2ApiUserData(
+                id: (int) $user->id,
+                email: (string) $user->email,
+                username: (string) $user->username,
+                passwordHash: Hash::make('user-pass'),
+                role: 'user',
+                status: 'active',
+                balance: '25',
+                totalRecharged: '0',
+                affCode: 'AFF1001',
+                inviterId: null,
+                createdAt: CarbonImmutable::parse('2026-06-13 12:00:00', 'Asia/Shanghai'),
+                updatedAt: CarbonImmutable::parse('2026-06-14 10:00:00', 'Asia/Shanghai'),
+            ),
+        ]);
+
+        $this->withToken($admin->createToken('test')->plainTextToken)
+            ->getJson('/api/v1/admin/users/'.$user->id.'/api-quota')
+            ->assertOk()
+            ->assertJsonPath('data.apiBalance', '25.00')
+            ->assertJsonPath('data.totalUsed', '0.00')
+            ->assertJsonPath('data.totalCharged', '25.00');
     }
 
     public function test_admin_quota_snapshot_falls_back_to_sub2api_admin_api(): void

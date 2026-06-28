@@ -12,6 +12,7 @@ use App\Modules\Rebate\Services\DecayRebateCalculator;
 use App\Modules\Rebate\Services\DecayRebateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 /**
@@ -175,10 +176,10 @@ class DeepRebateCalculationTest extends TestCase
 
     // ─── 里程碑 + 衰减联动 ───
 
-    public function test_milestone_then_decay_combined_for_250_recharge(): void
+    public function test_milestone_then_decay_combined_for_300_recharge(): void
     {
         [$parent, $payer] = $this->pairWithBinding();
-        $event = $this->createEvent($payer, 'combo-250', '250');
+        $event = $this->createEvent($payer, 'combo-300', '300');
 
         // 里程碑处理
         $milestoneResult = app(MilestoneService::class)->process($event);
@@ -195,6 +196,12 @@ class DeepRebateCalculationTest extends TestCase
             'event_id' => $event->id,
             'receiver_user_id' => $parent->id,
             'type' => 'milestone',
+        ]);
+        $this->assertDatabaseHas('rebate_records', [
+            'event_id' => $event->id,
+            'receiver_user_id' => $parent->id,
+            'type' => 'decay',
+            'rebate_amount' => '15',
         ]);
     }
 
@@ -264,12 +271,12 @@ class DeepRebateCalculationTest extends TestCase
         $result = app(DecayRebateService::class)->process($event);
 
         $this->assertTrue($result['processed']);
-        $this->assertSame('99.999901', $result['poolAmount']);
+        $this->assertSame('14.999985', $result['poolAmount']);
         $sum = RebateRecord::query()
             ->where('event_id', $event->id)
             ->where('type', 'decay')
             ->sum('rebate_amount');
-        $this->assertSame('99.999901', number_format((float) $sum, 6, '.', ''));
+        $this->assertSame('14.999985', number_format((float) $sum, 6, '.', ''));
     }
 
     // ─── helpers ───
@@ -292,6 +299,7 @@ class DeepRebateCalculationTest extends TestCase
 
     private function createEvent(User $payer, string $sourceId, string $amount): RebateEvent
     {
+        Queue::fake();
         $admin = $this->user(9001 + DB::table('users')->count(), 'admin' . DB::table('users')->count(), 'admin');
         $result = app(RechargeEventService::class)->createManual($admin, $payer, [
             'source_type' => 'manual_admin',

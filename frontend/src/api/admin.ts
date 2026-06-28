@@ -118,6 +118,8 @@ const mockPaymentConfig: AdminPaymentConfig = {
   note: '付款时请备注订单号，支付后点击“我已完成支付”等待审核到账。',
   expireMinutes: 15,
   creditRate: '1',
+  rechargeName: '额度充值',
+  feeRate: '0.6',
   withdrawDailyLimit: 1,
   epay: {
     enabled: false,
@@ -190,11 +192,18 @@ export const getFullRebateConfig = async (): Promise<ApiRes<FullRebateConfig>> =
       },
       multiLevel: {
         enabled: (rebate.mode ?? 'decay') === 'decay',
-        totalPoolRate: String(Number(rebate.pool_ratio ?? 0.15) * 100),
+        stageAmount: String(rebate.stage_amount ?? '100'),
+        rewardAmount: String(rebate.stage_reward_amount ?? '15'),
         decayCoefficient: String(rebate.decay_factor ?? '0.4'),
-        maxDepth: 10,
+        maxDepth: Number(rebate.max_depth ?? 5),
         inactiveNodeMode: rebate.inactive_node_mode === 'exclude_recalculate' ? 'exclude_recalculate' : 'platform',
       },
+      rechargeBonus: [
+        { amount: '100', bonus: String(rebate.recharge_bonus_100 ?? '5') },
+        { amount: '200', bonus: String(rebate.recharge_bonus_200 ?? '15') },
+        { amount: '500', bonus: String(rebate.recharge_bonus_500 ?? '50') },
+        { amount: '1000', bonus: String(rebate.recharge_bonus_1000 ?? '120') },
+      ],
       withdrawLimit: {
         minAmount: String(withdraw.min_amount ?? '50'),
         cooldownHours: Number(withdraw.freeze_days ?? 0) * 24,
@@ -226,9 +235,15 @@ export const saveFullRebateConfig = async (config: FullRebateConfig): Promise<Ap
         max_times: config.milestone.maxTimes,
       },
       rebate: {
-        pool_ratio: String((Number(config.multiLevel.totalPoolRate) || 0) / 100),
+        stage_amount: config.multiLevel.stageAmount,
+        stage_reward_amount: config.multiLevel.rewardAmount,
         decay_factor: config.multiLevel.decayCoefficient,
+        max_depth: config.multiLevel.maxDepth,
         inactive_node_mode: config.multiLevel.inactiveNodeMode,
+        recharge_bonus_100: config.rechargeBonus[0]?.bonus ?? '0',
+        recharge_bonus_200: config.rechargeBonus[1]?.bonus ?? '0',
+        recharge_bonus_500: config.rechargeBonus[2]?.bonus ?? '0',
+        recharge_bonus_1000: config.rechargeBonus[3]?.bonus ?? '0',
       },
       withdraw: {
         min_amount: config.withdrawLimit.minAmount,
