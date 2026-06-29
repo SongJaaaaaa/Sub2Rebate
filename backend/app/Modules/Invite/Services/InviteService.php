@@ -244,6 +244,7 @@ class InviteService
         }
 
         $ref = $this->ensurePath($user);
+        $ref = $this->syncInviteCode($user, $ref, $sub2User?->affCode);
         $parentId = $sub2User?->inviterId ?? $user->sub2api_inviter_id;
         if ($parentId === null || (int) $parentId === (int) $user->id) {
             return $ref;
@@ -298,6 +299,23 @@ class InviteService
         $this->refreshChildren((int) $user->id, $newPath, $newDepth);
 
         return DB::table('referral_paths')->where('user_id', $user->id)->first();
+    }
+
+    private function syncInviteCode(User $user, stdClass $ref, ?string $affCode = null): stdClass
+    {
+        $code = trim((string) ($affCode ?: $user->sub2api_aff_code ?: ''));
+        if ($code === '' || (string) $ref->invite_code === $code) {
+            return $ref;
+        }
+
+        DB::table('referral_paths')
+            ->where('user_id', $user->id)
+            ->update([
+                'invite_code' => $code,
+                'updated_at' => now(),
+            ]);
+
+        return DB::table('referral_paths')->where('user_id', $user->id)->first() ?? $ref;
     }
 
     public function refreshSub2ApiTeam(User $user): stdClass

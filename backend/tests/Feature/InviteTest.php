@@ -45,12 +45,32 @@ class InviteTest extends TestCase
         $this->assertDatabaseHas('referral_paths', [
             'user_id' => 1001,
             'parent_user_id' => null,
+            'invite_code' => 'SUB2AFF12',
             'path' => '1001',
             'depth' => 0,
         ]);
     }
 
-    public function test_bind_invite_code_builds_ancestor_chain_tree_and_records(): void
+    public function test_invite_bind_api_is_disabled_for_normal_users(): void
+    {
+        $this->fakeSub2Users([]);
+        $a = $this->user(1001, 'a');
+        $b = $this->user(1002, 'b');
+
+        $aCode = $this->inviteCode($a);
+        $this->actingAs($b)
+            ->postJson('/api/v1/invite/bind', ['inviteCode' => $aCode])
+            ->assertForbidden()
+            ->assertJsonPath('code', 40301)
+            ->assertJsonPath('message', '邀请关系只能在注册时通过 Sub2API 邀请链接建立');
+
+        $this->assertDatabaseMissing('referral_paths', [
+            'user_id' => 1002,
+            'parent_user_id' => 1001,
+        ]);
+    }
+
+    public function test_service_bind_invite_code_builds_ancestor_chain_tree_and_records(): void
     {
         $this->fakeSub2Users([]);
         $a = $this->user(1001, 'a');
@@ -58,17 +78,14 @@ class InviteTest extends TestCase
         $c = $this->user(1003, 'c');
 
         $aCode = $this->inviteCode($a);
-        $this->actingAs($b)
-            ->postJson('/api/v1/invite/bind', ['inviteCode' => $aCode])
-            ->assertOk()
-            ->assertJsonPath('data.bound', true)
-            ->assertJsonPath('data.parent.id', 1001);
+        $result = app(InviteService::class)->bind($b, $aCode);
+        $this->assertTrue($result['ok']);
+        $this->assertSame(1001, $result['data']['parent']['id']);
 
         $bCode = $this->inviteCode($b);
-        $this->actingAs($c)
-            ->postJson('/api/v1/invite/bind', ['inviteCode' => $bCode])
-            ->assertOk()
-            ->assertJsonPath('data.parent.id', 1002);
+        $result = app(InviteService::class)->bind($c, $bCode);
+        $this->assertTrue($result['ok']);
+        $this->assertSame(1002, $result['data']['parent']['id']);
 
         $this->assertDatabaseHas('referral_paths', [
             'user_id' => 1003,
@@ -127,7 +144,39 @@ class InviteTest extends TestCase
         ]);
     }
 
-    public function test_bind_rejects_self_invite_and_rebind(): void
+    public function test_root_user_referral_invite_code_syncs_to_sub2api_aff_code(): void
+    {
+        $this->fakeSub2Users([
+            1201 => $this->sub2User(1201, 'root@example.com', 'root', 'ROOTAFF12'),
+        ]);
+        $user = $this->user(1201, 'root', 'root@example.com');
+
+        DB::table('referral_paths')->insert([
+            'user_id' => 1201,
+            'parent_user_id' => null,
+            'invite_code' => 'OLD123',
+            'path' => '1201',
+            'depth' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->getJson('/api/v1/invite/me')
+            ->assertOk()
+            ->assertJsonPath('data.sub2ApiAffCode', 'ROOTAFF12')
+            ->assertJsonPath('data.depth', 0);
+
+        $this->assertDatabaseHas('referral_paths', [
+            'user_id' => 1201,
+            'parent_user_id' => null,
+            'invite_code' => 'ROOTAFF12',
+            'path' => '1201',
+            'depth' => 0,
+        ]);
+    }
+
+    public function test_service_bind_rejects_self_invite_and_rebind(): void
     {
         $this->fakeSub2Users([]);
         $a = $this->user(1001, 'a');
@@ -135,19 +184,18 @@ class InviteTest extends TestCase
 
         $aCode = $this->inviteCode($a);
 
-        $this->actingAs($a)
-            ->postJson('/api/v1/invite/bind', ['inviteCode' => $aCode])
-            ->assertStatus(422)
-            ->assertJsonPath('message', '不能绑定自己的邀请码');
+        $result = app(InviteService::class)->bind($a, $aCode);
+        $this->assertFalse($result['ok']);
+        $this->assertSame(422, $result['status']);
+        $this->assertSame('不能绑定自己的邀请码', $result['message']);
 
-        $this->actingAs($b)
-            ->postJson('/api/v1/invite/bind', ['inviteCode' => $aCode])
-            ->assertOk();
+        $result = app(InviteService::class)->bind($b, $aCode);
+        $this->assertTrue($result['ok']);
 
-        $this->actingAs($b)
-            ->postJson('/api/v1/invite/bind', ['inviteCode' => $aCode])
-            ->assertStatus(422)
-            ->assertJsonPath('message', '已绑定邀请关系');
+        $result = app(InviteService::class)->bind($b, $aCode);
+        $this->assertFalse($result['ok']);
+        $this->assertSame(422, $result['status']);
+        $this->assertSame('已绑定邀请关系', $result['message']);
     }
 
     public function test_query_refreshes_sub2api_team_and_removes_deleted_invite_branch(): void

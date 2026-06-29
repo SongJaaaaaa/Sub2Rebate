@@ -273,7 +273,7 @@ class DeepApiEndpointTest extends TestCase
             ]]);
     }
 
-    public function test_invite_bind_with_valid_code(): void
+    public function test_invite_bind_api_is_disabled_for_normal_users(): void
     {
         $parent = $this->user(1001, 'parent');
         $child = $this->user(1002, 'child');
@@ -282,10 +282,11 @@ class DeepApiEndpointTest extends TestCase
 
         $this->withToken($child->createToken('test')->plainTextToken)
             ->postJson('/api/v1/invite/bind', ['inviteCode' => $code])
-            ->assertOk()
-            ->assertJsonPath('code', 0);
+            ->assertForbidden()
+            ->assertJsonPath('code', 40301)
+            ->assertJsonPath('message', '邀请关系只能在注册时通过 Sub2API 邀请链接建立');
 
-        $this->assertDatabaseHas('referral_paths', [
+        $this->assertDatabaseMissing('referral_paths', [
             'user_id' => $child->id,
             'parent_user_id' => $parent->id,
         ]);

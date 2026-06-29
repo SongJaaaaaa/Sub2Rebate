@@ -33,17 +33,12 @@ class InviteController extends Controller
             return ApiResponse::fail(ApiError::UNAUTHENTICATED, '未登录', null, 401);
         }
 
-        $result = $this->invites->bind($user, (string) $request->input('inviteCode'));
-        if (! ($result['ok'] ?? false)) {
-            return ApiResponse::fail(
-                (int) $result['code'],
-                (string) $result['message'],
-                null,
-                (int) $result['status']
-            );
-        }
-
-        return ApiResponse::ok($result['data']);
+        return ApiResponse::fail(
+            ApiError::FORBIDDEN,
+            '邀请关系只能在注册时通过 Sub2API 邀请链接建立',
+            null,
+            403
+        );
     }
 
     public function tree(Request $request): JsonResponse
