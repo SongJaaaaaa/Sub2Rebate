@@ -1,7 +1,13 @@
-export type RechargeChannel = 'alipay' | 'epay'
+export type PaymentChannel = 'alipay' | 'epay'
+export type RechargeChannel = PaymentChannel | 'api_quota'
 export type RechargeMode = 'manual_qr' | 'epay'
 export type RechargeStatus = 'pending' | 'submitted' | 'paid' | 'approved' | 'failed' | 'rejected' | 'expired'
 export type CreditStatus = 'pending' | 'success' | 'failed'
+
+export interface RechargeBonusPackage {
+  amount: string
+  bonus: string
+}
 
 export interface EpayConfig {
   enabled: boolean
@@ -19,22 +25,33 @@ export interface EpayConfig {
 export interface RechargeConfig {
   enabled: boolean
   mode: RechargeMode
-  channel: RechargeChannel
+  channel: PaymentChannel
   qrUrl: string
   displayName: string
   note: string
   expireMinutes: number
+  rechargeName?: string
+  feeRate?: string
+  bonusPackages?: RechargeBonusPackage[]
   epay?: EpayConfig
 }
 
 export interface RechargeOrder {
   id: number
+  recordId?: string
+  source?: 'sub2rebate' | 'sub2api'
+  sourceLabel?: string
+  type?: 'add' | 'subtract'
   orderNo: string
   channel: RechargeChannel
+  channelLabel?: string
   outTradeNo: string
   providerTradeNo: string
   subject: string
   amount: string
+  feeRate?: string
+  feeAmount?: string
+  payableAmount?: string
   bonusAmount: string
   creditAmount: string
   paidAmount: string
@@ -49,6 +66,9 @@ export interface RechargeOrder {
   remark: string
   reviewRemark: string
   creditFailMsg: string
+  reason?: string
+  operator?: string
+  rebateEnabled?: boolean
   rebateEventId: number | null
   submittedAt: string
   reviewedAt: string
@@ -59,6 +79,7 @@ export interface RechargeOrder {
   payUrl: string
   qrUrl: string
   displayName: string
+  rechargeName?: string
   note: string
 }
 

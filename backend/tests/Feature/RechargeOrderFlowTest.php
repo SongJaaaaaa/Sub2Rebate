@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Modules\Audit\Models\AuditLog;
 use App\Modules\Config\Services\ConfigService;
 use App\Modules\Payment\Models\RechargeOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -228,6 +229,56 @@ class RechargeOrderFlowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.total', 1)
             ->assertJsonPath('data.list.0.orderNo', 'RC202606260001');
+    }
+
+    public function test_user_recharge_records_include_admin_api_quota_adjustments(): void
+    {
+        $admin = $this->user(9001, 'admin', 'admin');
+        $user = $this->user(1001, 'user');
+
+        $order = RechargeOrder::query()->create([
+            'user_id' => $user->id,
+            'order_no' => 'RC202606300001',
+            'channel' => 'alipay',
+            'amount' => '100.000000',
+            'bonus_amount' => '5.000000',
+            'credit_amount' => '105.000000',
+            'status' => RechargeOrder::STATUS_APPROVED,
+            'expire_at' => now()->addMinutes(15),
+        ]);
+        $order->forceFill([
+            'created_at' => '2026-06-30 10:00:00',
+            'updated_at' => '2026-06-30 10:00:00',
+        ])->save();
+
+        $log = AuditLog::query()->create([
+            'actor_user_id' => $admin->id,
+            'target_user_id' => $user->id,
+            'module' => 'sub2api',
+            'action' => 'sub2api.api_quota_adjust',
+            'after_values' => [
+                'amount' => '25.000000',
+                'operation' => 'add',
+                'reason' => '手动补偿',
+                'rebate_enabled' => false,
+                'rebate_event_id' => null,
+            ],
+            'remark' => '测试补额度',
+        ]);
+        $log->forceFill([
+            'created_at' => '2026-06-30 10:01:00',
+            'updated_at' => '2026-06-30 10:01:00',
+        ])->save();
+
+        $this->withToken($user->createToken('test')->plainTextToken)
+            ->getJson('/api/v1/recharge/orders')
+            ->assertOk()
+            ->assertJsonPath('data.total', 2)
+            ->assertJsonPath('data.list.0.channel', 'api_quota')
+            ->assertJsonPath('data.list.0.channelLabel', '管理员调整')
+            ->assertJsonPath('data.list.0.amount', '25.00')
+            ->assertJsonPath('data.list.0.rebateEnabled', false)
+            ->assertJsonPath('data.list.0.remark', '测试补额度');
     }
 
     private function setRechargeConfig(): void

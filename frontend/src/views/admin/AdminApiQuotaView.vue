@@ -23,6 +23,7 @@ const form = reactive({
   amount: 0,
   reason: '充值' as ApiQuotaReason,
   remark: '余额充值',
+  rebateEnabled: false,
 })
 const reasonOptions: ApiQuotaReason[] = ['充值', '手动补偿', '违规扣除', '系统修正', '其他']
 
@@ -79,8 +80,11 @@ const onSubmit = async () => {
     form.remark = '余额充值'
   }
   const action = form.type === 'add' ? '增加' : '减少'
+  const rebateTip = form.type === 'add'
+    ? (form.rebateEnabled ? '本次会计入充值返利。' : '本次仅增加 API 额度，不计入充值返利。')
+    : '扣减不参与返利。'
   await ElMessageBox.confirm(
-    `确认为「${userName(selectedUser.value)}」${action} Sub2API 额度 ¥${form.amount}？`,
+    `确认为「${userName(selectedUser.value)}」${action} Sub2API 额度 ¥${form.amount}？${rebateTip}`,
     '确认额度调整',
     { confirmButtonText: '确认', type: 'warning' }
   )
@@ -100,6 +104,7 @@ const onSubmit = async () => {
     form.amount = 0
     form.reason = '充值'
     form.remark = '余额充值'
+    form.rebateEnabled = false
   } finally {
     submitting.value = false
   }
@@ -215,12 +220,21 @@ onMounted(() => fetchUsers())
                 <el-option v-for="r in reasonOptions" :key="r" :label="r" :value="r" />
               </el-select>
             </div>
+            <div v-if="form.type === 'add'" class="mt-4 rounded-lg border border-[var(--sr-border)] bg-[var(--sr-surface-low)] px-4 py-3">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <div class="text-sm font-semibold">参与返利</div>
+                  <div class="mt-1 text-xs text-[var(--sr-muted)]">关闭时仅增加 API 额度，不计入充值返利。</div>
+                </div>
+                <el-switch v-model="form.rebateEnabled" />
+              </div>
+            </div>
             <div class="mt-4">
               <label class="mb-2 block text-sm font-semibold">备注</label>
               <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="该内容将记录于审计日志..." />
             </div>
             <div class="mt-4 flex justify-end gap-3">
-              <el-button @click="form.amount = 0; form.reason = '充值'; form.remark = '余额充值'">重置</el-button>
+              <el-button @click="form.amount = 0; form.reason = '充值'; form.remark = '余额充值'; form.rebateEnabled = false">重置</el-button>
               <el-button type="primary" :loading="submitting" @click="onSubmit">确认调整</el-button>
             </div>
             <p class="mt-3 text-xs text-[var(--sr-muted)]">* 额度调整立即生效，操作记录将同步至审计日志。扣减额度不会退还已消费部分。</p>
@@ -230,20 +244,25 @@ onMounted(() => fetchUsers())
           <AppCard>
             <h3 class="mb-4 text-sm font-bold">额度变动记录</h3>
             <div class="space-y-3">
-              <div v-for="r in quotaRecords" :key="r.id" class="flex items-center justify-between rounded-lg border border-[var(--sr-border)] px-4 py-3">
-                <div class="flex items-center gap-3">
+              <div v-for="r in quotaRecords" :key="r.recordId || r.id" class="flex items-center justify-between gap-4 rounded-lg border border-[var(--sr-border)] px-4 py-3">
+                <div class="flex min-w-0 items-center gap-3">
                   <span
-                    class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold"
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
                     :class="r.type === 'add' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
                   >
                     {{ r.type === 'add' ? '+' : '-' }}
                   </span>
-                  <div>
-                    <div class="text-sm font-semibold">{{ r.reason }}</div>
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                      <span>{{ r.reason }}</span>
+                      <el-tag size="small" :type="r.source === 'sub2api' ? 'info' : 'success'">{{ r.sourceLabel || '返利系统' }}</el-tag>
+                      <el-tag size="small" :type="r.rebateEnabled ? 'warning' : 'info'">{{ r.rebateEnabled ? '参与返利' : '不参与返利' }}</el-tag>
+                    </div>
                     <div class="text-xs text-[var(--sr-muted)]">{{ r.operator }} · {{ r.createdAt }}</div>
+                    <div v-if="r.remark" class="mt-1 truncate text-xs text-[var(--sr-muted)]">备注：{{ r.remark }}</div>
                   </div>
                 </div>
-                <span class="text-sm font-bold" :class="r.type === 'add' ? 'text-green-600' : 'text-red-600'">
+                <span class="shrink-0 text-sm font-bold" :class="r.type === 'add' ? 'text-green-600' : 'text-red-600'">
                   {{ r.type === 'add' ? '+' : '-' }} {{ money(r.amount) }}
                 </span>
               </div>

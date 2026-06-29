@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Concerns\FormatsApiPayloads;
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessRebateEventJob;
 use App\Models\User;
 use App\Modules\Audit\Models\AuditLog;
 use App\Modules\Audit\Services\AuditLogService;
 use App\Modules\Auth\Services\Sub2RebateAuthService;
+use App\Modules\Payment\Models\PaymentRecord;
+use App\Modules\Payment\Models\RebateEvent;
 use App\Modules\Payment\Services\RechargeEventService;
 use App\Modules\Rebate\Models\RebateBalance;
 use App\Modules\Sub2Api\Repositories\Sub2ApiUserRepository;
@@ -47,7 +50,7 @@ class AdminBalanceController extends Controller
 
         if ($sub2User !== null) {
             $balance = (float) $sub2User->balance;
-            $charged = (float) $sub2User->totalRecharged;
+            $charged = $this->chargedAmount($id, $sub2User->totalRecharged);
 
             return ApiResponse::ok([
                 'userId' => (int) $sub2User->id,
@@ -74,7 +77,7 @@ class AdminBalanceController extends Controller
         }
 
         $balance = (float) ($data['balance'] ?? 0);
-        $charged = (float) ($data['total_recharged'] ?? 0);
+        $charged = $this->chargedAmount($id, $data['total_recharged'] ?? 0);
         $username = trim((string) ($data['username'] ?? ''));
         if ($username === '') {
             $username = trim((string) ($user->username ?: ($data['email'] ?? '')));
@@ -174,7 +177,11 @@ class AdminBalanceController extends Controller
         $operation = in_array($type, ['subtract', 'sub', 'minus'], true) ? 'subtract' : 'add';
         $reason = trim((string) $request->input('reason', '充值'));
         $remark = trim((string) $request->input('remark', '余额充值'));
-        $notes = trim($reason.' '.$remark);
+        $rebateEnabled = $request->boolean('rebateEnabled', $request->boolean('rebate_enabled', false));
+        $rebateText = $operation === 'add'
+            ? ($rebateEnabled ? '参与返利' : '不参与返利')
+            : '扣减不参与返利';
+        $notes = trim($reason.' '.$remark.' '.$rebateText);
         $sourceId = 'admin-api-quota-'.$user->id.'-'.now()->format('YmdHisv');
 
         try {
@@ -190,7 +197,7 @@ class AdminBalanceController extends Controller
         }
 
         $event = null;
-        if ($operation === 'add') {
+        if ($operation === 'add' && $rebateEnabled) {
             $created = $this->recharges->createRechargeEvent([
                 'user_id' => $user->id,
                 'source_type' => 'sub2rebate.admin_api_quota',
@@ -212,6 +219,9 @@ class AdminBalanceController extends Controller
             }
 
             $event = $created['rebateEvent'] ?? null;
+            if ($event instanceof RebateEvent) {
+                ProcessRebateEventJob::dispatch($event);
+            }
         }
 
         $this->audits->record('sub2api', 'sub2api.api_quota_adjust', [
@@ -224,6 +234,7 @@ class AdminBalanceController extends Controller
                 'operation' => $operation,
                 'reason' => $reason,
                 'sub2api_response' => $sub2Res,
+                'rebate_enabled' => $operation === 'add' && $rebateEnabled,
                 'rebate_event_id' => $event?->id,
             ],
             'remark' => $remark,
@@ -235,6 +246,7 @@ class AdminBalanceController extends Controller
             'amount' => $this->money($amount),
             'reason' => $reason,
             'remark' => $remark,
+            'rebateEnabled' => $operation === 'add' && $rebateEnabled,
             'sub2api' => $sub2Res,
             'rebateEventId' => $event?->id,
         ]);
@@ -285,27 +297,87 @@ class AdminBalanceController extends Controller
 
         $total = (clone $query)->count();
         $rows = $query->orderByDesc('id')->forPage($page, $pageSize)->get();
+        $local = $rows->map(fn (AuditLog $log): array => $this->apiQuotaAuditPayload($log))->all();
+        $remote = $page === 1 ? $this->sub2ApiBalanceHistory($id, $pageSize) : [];
+        $list = collect([...$local, ...$remote])
+            ->sortByDesc(fn (array $row): string => (string) ($row['createdAt'] ?? ''))
+            ->values()
+            ->all();
 
         return ApiResponse::ok([
-            'list' => $rows->map(function (AuditLog $log): array {
-                $after = is_array($log->after_values) ? $log->after_values : [];
-                $type = (string) ($after['operation'] ?? 'add');
-
-                return [
-                    'id' => (int) $log->id,
-                    'type' => $type === 'subtract' ? 'subtract' : 'add',
-                    'amount' => $this->money($after['amount'] ?? 0),
-                    'reason' => (string) ($after['reason'] ?? '充值'),
-                    'remark' => (string) ($log->remark ?: ''),
-                    'operator' => $log->actor_user_id !== null ? '管理员#'.$log->actor_user_id : '系统',
-                    'createdAt' => $this->time($log->created_at),
-                    'rebateEventId' => $after['rebate_event_id'] ?? null,
-                ];
-            })->all(),
+            'list' => $list,
             'page' => $page,
             'pageSize' => $pageSize,
             'total' => $total,
         ]);
+    }
+
+    private function apiQuotaAuditPayload(AuditLog $log): array
+    {
+        $after = is_array($log->after_values) ? $log->after_values : [];
+        $type = (string) ($after['operation'] ?? 'add');
+
+        return [
+            'id' => (int) $log->id,
+            'recordId' => 'audit-'.$log->id,
+            'source' => 'sub2rebate',
+            'sourceLabel' => '返利系统',
+            'type' => $type === 'subtract' ? 'subtract' : 'add',
+            'amount' => $this->money($after['amount'] ?? 0),
+            'reason' => (string) ($after['reason'] ?? '充值'),
+            'remark' => (string) ($log->remark ?: ''),
+            'operator' => $log->actor_user_id !== null ? '管理员#'.$log->actor_user_id : '系统',
+            'createdAt' => $this->time($log->created_at),
+            'rebateEnabled' => (bool) ($after['rebate_enabled'] ?? ($after['rebate_event_id'] ?? null) !== null),
+            'rebateEventId' => $after['rebate_event_id'] ?? null,
+        ];
+    }
+
+    private function sub2ApiBalanceHistory(int $id, int $pageSize): array
+    {
+        try {
+            $res = $this->sub2Api->userBalanceHistory($id, 1, $pageSize);
+        } catch (Throwable) {
+            return [];
+        }
+
+        $items = data_get($res, 'data.items', []);
+        if (! is_array($items)) {
+            return [];
+        }
+
+        return collect($items)->map(function (array $item): array {
+            $amount = (float) ($item['value'] ?? 0);
+            $notes = trim((string) ($item['notes'] ?? ''));
+
+            return [
+                'id' => -1 * (int) ($item['id'] ?? 0),
+                'recordId' => 'sub2api-'.($item['id'] ?? ''),
+                'source' => 'sub2api',
+                'sourceLabel' => 'Sub2API',
+                'type' => $amount < 0 ? 'subtract' : 'add',
+                'amount' => $this->money(abs($amount)),
+                'reason' => (string) ($item['type'] ?? 'admin_balance'),
+                'remark' => $notes,
+                'operator' => 'Sub2API',
+                'createdAt' => $this->time((string) ($item['used_at'] ?? $item['created_at'] ?? '')),
+                'rebateEnabled' => str_contains($notes, '参与返利') && ! str_contains($notes, '不参与返利'),
+                'rebateEventId' => null,
+            ];
+        })->all();
+    }
+
+    private function chargedAmount(int $userId, mixed $sub2Charged): float
+    {
+        $charged = is_numeric($sub2Charged) ? (float) $sub2Charged : 0.0;
+        if ($charged > 0) {
+            return $charged;
+        }
+
+        return (float) PaymentRecord::query()
+            ->where('user_id', $userId)
+            ->where('status', 'paid')
+            ->sum('standard_amount');
     }
 
     private function balancePayload(RebateBalance $balance): array

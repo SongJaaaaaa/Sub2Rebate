@@ -132,7 +132,7 @@ class AdminApiTest extends TestCase
             ->assertJsonPath('data.availableAmount', '20.00');
     }
 
-    public function test_admin_can_adjust_sub2api_quota_and_create_recharge_event(): void
+    public function test_admin_can_adjust_sub2api_quota_without_rebate_by_default(): void
     {
         config([
             'sub2rebate.sub2api_base_url' => 'https://sub2api.test',
@@ -167,7 +167,9 @@ class AdminApiTest extends TestCase
             ->assertJsonPath('data.userId', $user->id)
             ->assertJsonPath('data.reason', '充值')
             ->assertJsonPath('data.remark', '余额充值')
-            ->assertJsonPath('data.amount', '25.00');
+            ->assertJsonPath('data.amount', '25.00')
+            ->assertJsonPath('data.rebateEnabled', false)
+            ->assertJsonPath('data.rebateEventId', null);
 
         Http::assertSent(function ($request): bool {
             $data = $request->data();
@@ -176,7 +178,61 @@ class AdminApiTest extends TestCase
                 && $request->hasHeader('x-api-key', 'secret-key')
                 && $request->hasHeader('Idempotency-Key')
                 && (float) ($data['balance'] ?? 0) === 25.0
-                && ($data['operation'] ?? '') === 'add';
+                && ($data['operation'] ?? '') === 'add'
+                && str_contains((string) ($data['notes'] ?? ''), '不参与返利');
+        });
+
+        $this->assertDatabaseCount('payment_records', 0);
+        $this->assertDatabaseCount('rebate_events', 0);
+        $this->assertDatabaseHas('audit_logs', [
+            'module' => 'sub2api',
+            'action' => 'sub2api.api_quota_adjust',
+            'target_user_id' => $user->id,
+            'remark' => '余额充值',
+        ]);
+    }
+
+    public function test_admin_can_adjust_sub2api_quota_with_rebate_enabled(): void
+    {
+        config([
+            'sub2rebate.sub2api_base_url' => 'https://sub2api.test',
+            'sub2rebate.sub2api_admin_api_key' => 'secret-key',
+        ]);
+        Http::fake([
+            'https://sub2api.test/api/v1/admin/users/1001/balance' => Http::response([
+                'code' => 0,
+                'data' => [
+                    'id' => 1001,
+                    'balance' => 125,
+                    'total_recharged' => 125,
+                ],
+            ]),
+        ]);
+
+        $admin = $this->user(9001, 'admin', 'admin');
+        $user = $this->user(1001, 'user');
+        $this->fakeSub2Users([
+            $this->sub2User($admin, 'admin-pass'),
+            $this->sub2User($user, 'user-pass'),
+        ]);
+
+        $this->withToken($admin->createToken('test')->plainTextToken)
+            ->postJson('/api/v1/admin/users/'.$user->id.'/api-quota', [
+                'amount' => '25',
+                'type' => 'add',
+                'reason' => '充值',
+                'remark' => '余额充值',
+                'rebateEnabled' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.rebateEnabled', true);
+
+        Http::assertSent(function ($request): bool {
+            $data = $request->data();
+
+            return $request->url() === 'https://sub2api.test/api/v1/admin/users/1001/balance'
+                && str_contains((string) ($data['notes'] ?? ''), '参与返利')
+                && ! str_contains((string) ($data['notes'] ?? ''), '不参与返利');
         });
 
         $this->assertDatabaseHas('payment_records', [
@@ -189,12 +245,6 @@ class AdminApiTest extends TestCase
             'user_id' => $user->id,
             'source_type' => 'sub2rebate.admin_api_quota',
             'standard_amount' => '25',
-        ]);
-        $this->assertDatabaseHas('audit_logs', [
-            'module' => 'sub2api',
-            'action' => 'sub2api.api_quota_adjust',
-            'target_user_id' => $user->id,
-            'remark' => '余额充值',
         ]);
     }
 
@@ -264,6 +314,7 @@ class AdminApiTest extends TestCase
                 'type' => 'add',
                 'reason' => '充值',
                 'remark' => '余额充值',
+                'rebateEnabled' => true,
             ])
             ->assertOk()
             ->assertJsonPath('data.amount', '1.00');

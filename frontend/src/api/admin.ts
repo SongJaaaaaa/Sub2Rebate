@@ -415,6 +415,7 @@ export const adjustApiQuota = async (userId: number, data: ApiQuotaReq): Promise
         amount: String(data.amount),
         reason: data.reason,
         remark: data.remark,
+        rebateEnabled: Boolean(data.rebateEnabled),
         rebateEventId: null,
         sub2api: {},
       },
@@ -449,7 +450,26 @@ export const getApiQuota = async (userId: number): Promise<ApiRes<ApiQuotaInfo>>
 export const getApiQuotaRecords = async (userId: number): Promise<ApiRes<ApiQuotaRecord[]>> => {
   if (useMock) {
     await delay()
-    return { code: 0, message: 'ok', data: [] }
+    return {
+      code: 0,
+      message: 'ok',
+      data: [
+        {
+          id: 1,
+          recordId: 'audit-1',
+          source: 'sub2rebate',
+          sourceLabel: '返利系统',
+          type: 'add',
+          amount: '100.00',
+          reason: '手动补偿',
+          remark: '活动补偿，不参与返利',
+          operator: '管理员#1',
+          createdAt: '2026-06-30 10:00:00',
+          rebateEnabled: false,
+          rebateEventId: null,
+        },
+      ],
+    }
   }
   const res = await request.get(`/admin/users/${userId}/api-quota-records`) as ApiRes<PageRes<ApiQuotaRecord>>
   return { ...res, data: res.data.list }

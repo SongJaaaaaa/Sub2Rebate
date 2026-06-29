@@ -70,6 +70,7 @@ const statusOptions = [
 ]
 
 const terminalStatuses = ['approved', 'failed', 'rejected', 'expired']
+const channelText = (row: RechargeOrder) => row.channelLabel || (row.channel === 'epay' ? 'Epay' : row.channel === 'api_quota' ? '管理员调整' : '支付宝')
 
 const finalAmount = computed(() => {
   if (useCustom.value) return parseFloat(customAmount.value) || 0
@@ -434,13 +435,16 @@ onBeforeUnmount(() => stopOrderPolling())
             <button class="font-mono text-xs text-[var(--sr-primary)] hover:underline" @click="copyOrderNo(row.orderNo)">{{ row.orderNo }}</button>
           </template>
         </el-table-column>
-        <el-table-column prop="channel" label="通道" width="120">
-          <template #default="{ row }">{{ row.channel === 'epay' ? 'Epay' : '支付宝' }}</template>
+        <el-table-column prop="channel" label="通道" min-width="150">
+          <template #default="{ row }">
+            <div class="font-semibold">{{ channelText(row) }}</div>
+            <div class="mt-1 text-xs text-[var(--sr-muted)]">{{ row.sourceLabel || '返利系统' }}</div>
+          </template>
         </el-table-column>
         <el-table-column label="充值/支付" min-width="150">
           <template #default="{ row }">
             <div class="font-semibold">{{ money(row.amount) }}</div>
-            <div class="mt-1 text-xs text-[var(--sr-muted)]">支付：{{ money(row.payableAmount || row.amount) }}</div>
+            <div class="mt-1 text-xs text-[var(--sr-muted)]">{{ row.channel === 'api_quota' ? row.reason || '额度调整' : `支付：${money(row.payableAmount || row.amount)}` }}</div>
           </template>
         </el-table-column>
         <el-table-column label="到账额度/充值后额度" min-width="160">
@@ -452,6 +456,11 @@ onBeforeUnmount(() => stopOrderPolling())
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <StatusTag :text="getRechargeStatus(row.status).text" :type="getRechargeStatus(row.status).type" />
+          </template>
+        </el-table-column>
+        <el-table-column label="返利" width="110">
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.rebateEnabled ? 'warning' : 'info'">{{ row.rebateEnabled ? '参与返利' : '不参与返利' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="160" />
@@ -485,7 +494,8 @@ onBeforeUnmount(() => stopOrderPolling())
         </el-descriptions-item>
         <el-descriptions-item label="支付单号">{{ detailOrder.outTradeNo || '-' }}</el-descriptions-item>
         <el-descriptions-item label="第三方流水">{{ detailOrder.providerTradeNo || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="通道">{{ detailOrder.channel === 'epay' ? 'Epay' : '支付宝' }}</el-descriptions-item>
+        <el-descriptions-item label="通道">{{ channelText(detailOrder) }}</el-descriptions-item>
+        <el-descriptions-item label="来源">{{ detailOrder.sourceLabel || '返利系统' }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <StatusTag :text="getRechargeStatus(detailOrder.status).text" :type="getRechargeStatus(detailOrder.status).type" />
         </el-descriptions-item>
@@ -496,6 +506,7 @@ onBeforeUnmount(() => stopOrderPolling())
         <el-descriptions-item label="用户支付">{{ money(detailOrder.payableAmount) }}</el-descriptions-item>
         <el-descriptions-item label="实付金额">{{ detailOrder.paidAmount ? money(detailOrder.paidAmount) : '-' }}</el-descriptions-item>
         <el-descriptions-item label="到账额度">{{ money(detailOrder.creditAmount) }}</el-descriptions-item>
+        <el-descriptions-item label="返利">{{ detailOrder.rebateEnabled ? '参与返利' : '不参与返利' }}</el-descriptions-item>
         <el-descriptions-item label="充值前额度">{{ detailOrder.sub2BalanceBefore ? money(detailOrder.sub2BalanceBefore) : '-' }}</el-descriptions-item>
         <el-descriptions-item label="充值后额度">{{ detailOrder.sub2BalanceAfter ? money(detailOrder.sub2BalanceAfter) : '-' }}</el-descriptions-item>
         <el-descriptions-item label="付款人">{{ detailOrder.payerName || '-' }}</el-descriptions-item>

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Audit\Services\AuditLogService;
 use App\Modules\Config\Services\ConfigService;
 use App\Modules\Invite\Services\InviteService;
+use App\Modules\Payment\Models\PaymentRecord;
 use App\Modules\Payment\Models\RebateEvent;
 use App\Modules\Rebate\Models\RebateRecord;
 use App\Modules\Rebate\Models\UserRebateProgress;
@@ -73,7 +74,11 @@ class MilestoneService
                 ];
             }
 
-            $beforeAmount = (float) $progress->total_recharge_amount;
+            $paidTotal = (float) PaymentRecord::query()
+                ->where('user_id', $payer->id)
+                ->where('status', 'paid')
+                ->sum('standard_amount');
+            $beforeAmount = max((float) $progress->total_recharge_amount, $paidTotal - (float) $event->standard_amount);
             $afterAmount = $beforeAmount + (float) $event->standard_amount;
             $amount = $this->configFloat('milestone.amount', 100);
             $rewardAmount = $this->configFloat('milestone.reward_amount', 15);
@@ -81,7 +86,8 @@ class MilestoneService
 
             $beforeReached = $amount > 0 ? (int) floor($beforeAmount / $amount) : 0;
             $afterReached = $amount > 0 ? (int) floor($afterAmount / $amount) : 0;
-            $canTrigger = max(0, min($afterReached, $maxTimes) - max((int) $progress->milestone_times, $beforeReached));
+            $syncedTimes = max((int) $progress->milestone_times, min($beforeReached, $maxTimes));
+            $canTrigger = max(0, min($afterReached, $maxTimes) - max($syncedTimes, $beforeReached));
 
             $records = [];
             $parent = $this->directParent($payer);
@@ -142,7 +148,7 @@ class MilestoneService
             }
 
             $progress->total_recharge_amount = $this->money($afterAmount);
-            $progress->milestone_times = min($maxTimes, (int) $progress->milestone_times + $consumedTimes);
+            $progress->milestone_times = min($maxTimes, $syncedTimes + $consumedTimes);
             $progress->last_event_id = $event->id;
             $progress->save();
 

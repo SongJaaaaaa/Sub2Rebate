@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Services;
 
 use App\Models\User;
+use App\Modules\Audit\Models\AuditLog;
 use App\Modules\Config\Services\ConfigService;
 use App\Modules\Payment\Models\RechargeOrder;
 use App\Support\ApiError;
@@ -174,25 +175,39 @@ class RechargeOrderService
         $pageSize = max(1, min($pageSize, 100));
 
         $query = RechargeOrder::query()->where('user_id', $user->id);
+        $quotaQuery = AuditLog::query()
+            ->where('module', 'sub2api')
+            ->where('action', 'sub2api.api_quota_adjust')
+            ->where('target_user_id', $user->id);
         if ($status !== '') {
             $query->where('status', $status);
+            if ($status !== RechargeOrder::STATUS_APPROVED) {
+                $quotaQuery->whereRaw('1 = 0');
+            }
         }
         if ($startDate !== '') {
-            $query->where('created_at', '>=', CarbonImmutable::parse($startDate, 'Asia/Shanghai')->startOfDay());
+            $start = CarbonImmutable::parse($startDate, 'Asia/Shanghai')->startOfDay();
+            $query->where('created_at', '>=', $start);
+            $quotaQuery->where('created_at', '>=', $start);
         }
         if ($endDate !== '') {
-            $query->where('created_at', '<=', CarbonImmutable::parse($endDate, 'Asia/Shanghai')->endOfDay());
+            $end = CarbonImmutable::parse($endDate, 'Asia/Shanghai')->endOfDay();
+            $query->where('created_at', '<=', $end);
+            $quotaQuery->where('created_at', '<=', $end);
         }
 
-        $total = (clone $query)->count();
-        $rows = $query->orderByDesc('id')->forPage($page, $pageSize)->get();
         $config = $this->config();
+        $items = [
+            ...$query->get()->map(fn (RechargeOrder $row): array => $this->payload($row, $config))->all(),
+            ...$quotaQuery->get()->map(fn (AuditLog $log): array => $this->apiQuotaPayload($log))->all(),
+        ];
+        usort($items, fn (array $a, array $b): int => strcmp((string) $b['createdAt'], (string) $a['createdAt']));
 
         return [
-            'list' => $rows->map(fn (RechargeOrder $row): array => $this->payload($row, $config))->all(),
+            'list' => array_slice($items, ($page - 1) * $pageSize, $pageSize),
             'page' => $page,
             'pageSize' => $pageSize,
-            'total' => $total,
+            'total' => count($items),
         ];
     }
 
@@ -219,8 +234,13 @@ class RechargeOrderService
 
         return [
             'id' => (int) $order->id,
+            'recordId' => 'order-'.$order->id,
+            'source' => 'sub2rebate',
+            'sourceLabel' => '返利系统',
+            'type' => 'add',
             'orderNo' => $order->order_no,
             'channel' => $order->channel,
+            'channelLabel' => $order->channel === RechargeOrder::CHANNEL_EPAY ? 'Epay' : '支付宝',
             'outTradeNo' => (string) ($order->out_trade_no ?? ''),
             'providerTradeNo' => (string) ($order->provider_trade_no ?? ''),
             'subject' => (string) ($order->subject ?? ''),
@@ -239,6 +259,9 @@ class RechargeOrderService
             'remark' => (string) ($order->remark ?? ''),
             'reviewRemark' => (string) ($order->review_remark ?? ''),
             'creditFailMsg' => (string) ($order->credit_fail_msg ?? ''),
+            'reason' => '在线充值',
+            'operator' => '用户',
+            'rebateEnabled' => $order->rebate_event_id !== null,
             'rebateEventId' => $order->rebate_event_id,
             'submittedAt' => $this->time($order->submitted_at),
             'reviewedAt' => $this->time($order->reviewed_at),
@@ -249,7 +272,59 @@ class RechargeOrderService
             'payUrl' => (string) ($order->pay_url ?? ''),
             'qrUrl' => $config['qrUrl'],
             'displayName' => $order->channel === RechargeOrder::CHANNEL_EPAY ? $config['displayName'] : $config['displayName'],
-            'note' => $config['note'],
+            'note' => $order->rebate_event_id !== null ? '本次充值计入返利。' : $config['note'],
+        ];
+    }
+
+    private function apiQuotaPayload(AuditLog $log): array
+    {
+        $after = is_array($log->after_values) ? $log->after_values : [];
+        $type = (string) ($after['operation'] ?? 'add');
+        $amount = $this->money2($after['amount'] ?? 0);
+        $rebateEnabled = (bool) ($after['rebate_enabled'] ?? ($after['rebate_event_id'] ?? null) !== null);
+
+        return [
+            'id' => -1 * (int) $log->id,
+            'recordId' => 'audit-'.$log->id,
+            'source' => 'sub2rebate',
+            'sourceLabel' => '返利系统',
+            'type' => $type === 'subtract' ? 'subtract' : 'add',
+            'orderNo' => 'API-'.$log->id,
+            'channel' => 'api_quota',
+            'channelLabel' => '管理员调整',
+            'outTradeNo' => '',
+            'providerTradeNo' => '',
+            'subject' => $type === 'subtract' ? 'API额度扣减' : 'API额度增加',
+            'amount' => $amount,
+            'bonusAmount' => '0.00',
+            'creditAmount' => $type === 'subtract' ? '0.00' : $amount,
+            'paidAmount' => '',
+            'payableAmount' => $amount,
+            'sub2BalanceBefore' => '',
+            'sub2BalanceAfter' => '',
+            'status' => RechargeOrder::STATUS_APPROVED,
+            'tradeStatus' => '',
+            'creditStatus' => RechargeOrder::CREDIT_SUCCESS,
+            'payerName' => '',
+            'payerAccount' => '',
+            'voucherImageUrl' => '',
+            'remark' => (string) ($log->remark ?: ''),
+            'reviewRemark' => '',
+            'creditFailMsg' => '',
+            'reason' => (string) ($after['reason'] ?? '额度调整'),
+            'operator' => $log->actor_user_id !== null ? '管理员#'.$log->actor_user_id : '系统',
+            'rebateEnabled' => $rebateEnabled,
+            'rebateEventId' => $after['rebate_event_id'] ?? null,
+            'submittedAt' => '',
+            'reviewedAt' => '',
+            'paidAt' => $this->time($log->created_at),
+            'creditedAt' => $this->time($log->created_at),
+            'expireAt' => '',
+            'createdAt' => $this->time($log->created_at),
+            'payUrl' => '',
+            'qrUrl' => '',
+            'displayName' => 'Sub2API 额度',
+            'note' => $rebateEnabled ? '本次额度调整计入充值返利。' : '本次额度调整未计入充值返利。',
         ];
     }
 

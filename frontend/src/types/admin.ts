@@ -1,6 +1,6 @@
 import type { User } from '@/types/user'
 import type { WithdrawRecord } from '@/types/withdraw'
-import type { EpayConfig, RechargeChannel, RechargeMode } from '@/types/recharge'
+import type { EpayConfig, PaymentChannel, RechargeMode } from '@/types/recharge'
 
 // 管理端 — 用户管理
 export interface AdminUser extends User {
@@ -26,7 +26,7 @@ export interface AdminWithdrawRecord extends WithdrawRecord {
 export interface AdminPaymentConfig {
   enabled: boolean
   mode: RechargeMode
-  channel: RechargeChannel
+  channel: PaymentChannel
   qrUrl: string
   displayName: string
   note: string
@@ -241,6 +241,7 @@ export interface ApiQuotaReq {
   amount: string | number
   reason: ApiQuotaReason
   remark: string
+  rebateEnabled?: boolean
   adminPassword?: string
 }
 
@@ -250,6 +251,7 @@ export interface ApiQuotaAdjustRes {
   amount: string
   reason: ApiQuotaReason
   remark: string
+  rebateEnabled: boolean
   rebateEventId: number | null
   sub2api: Record<string, unknown>
 }
@@ -268,12 +270,16 @@ export interface ApiQuotaInfo {
 
 export interface ApiQuotaRecord {
   id: number
+  recordId?: string
+  source?: 'sub2rebate' | 'sub2api'
+  sourceLabel?: string
   type: BalanceAdjustType
   amount: string
-  reason: ApiQuotaReason
+  reason: string
   remark: string
   operator: string
   createdAt: string
+  rebateEnabled?: boolean
   rebateEventId: number | null
 }
 

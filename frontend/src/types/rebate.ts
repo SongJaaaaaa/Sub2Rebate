@@ -5,6 +5,7 @@ export interface DashboardSummary {
   todayRebateAmount: string
   monthRebateAmount: string
   totalRebateAmount: string
+  totalRechargeCreditAmount?: string
   availableAmount: string
   directInviteCount: number
   teamInviteCount: number
